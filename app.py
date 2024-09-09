@@ -166,3 +166,91 @@ def delete_camping(id):
     db.session.delete(camping)
     db.session.commit()
     return jsonify({"message": "Camping deleted"}), 200
+
+# RESERVATION ENDPOINTS
+# ------------------------------------
+@app.route("/reservation", methods=["POST"])
+def create_reservation():
+    data = request.get_json()
+    reservation = Reservation(
+        user_id=data["user_id"],
+        site_id=data["site_id"],
+        start_date=data["start_date"],
+        end_date=data["end_date"],
+        number_of_people=data["number_of_people"],
+        selected_services=data.get("selected_services"),
+        total_amount=data["total_amount"]
+    )
+    db.session.add(reservation)
+    db.session.commit()
+    return jsonify(reservation.serialize()), 201
+
+@app.route("/reservation", methods=["GET"])
+def get_reservations(): 
+    reservations = Reservation.query.all()
+    return jsonify([reservation.serialize() for reservation in reservations])
+
+@app.route("/reservation/<int:id>", methods=["PUT"])
+def update_reservation(id):
+    data = request.get_json()
+    reservation = Reservation.query.get(id)
+    if not reservation:
+        return jsonify({"error": "Reservation not found"}), 404
+    reservation.site_id = data.get("site_id", reservation.site_id)
+    reservation.start_date = data.get("start_date", reservation.start_date)
+    reservation.end_date = data.get("end_date", reservation.end_date)
+    reservation.number_of_people = data.get("number_of_people", reservation.number_of_people)
+    reservation.selected_services = data.get("selected_services", reservation.selected_services)
+    reservation.total_amount = data.get("total_amount", reservation.total_amount)
+    db.session.commit()
+    return jsonify(reservation.serialize()), 200
+
+@app.route("/reservation/<int:id>", methods=["DELETE"])
+def delete_reservation(id):
+    reservation = Reservation.query.get(id)
+    if not reservation:
+        return jsonify({"error": "Reservation not found"}), 404
+    db.session.delete(reservation)
+    db.session.commit()
+    return jsonify({"message": "Reservation deleted"}), 200
+
+# ------------------------------------
+# REVIEW ENDPOINTS
+# ------------------------------------
+@app.route("/review", methods=["POST"])
+def create_review():
+    data = request.get_json()
+    review = Review(
+        user_id=data["user_id"],
+        campsite_id=data["campsite_id"],
+        comment=data.get("comment"),
+        rating=data["rating"]
+    )
+    db.session.add(review)
+    db.session.commit()
+    return jsonify(review.serialize()), 201
+
+@app.route("/review", methods=["GET"])
+def get_reviews(): 
+    reviews = Review.query.all()
+    return jsonify([review.serialize() for review in reviews])
+
+@app.route("/review/<int:id>", methods=["PUT"])
+def update_review(id):
+    data = request.get_json()
+    review = Review.query.get(id)
+    if not review:
+        return jsonify({"error": "Review not found"}), 404
+    review.comment = data.get("comment", review.comment)
+    review.rating = data.get("rating", review.rating)
+    db.session.commit()
+    return jsonify(review.serialize()), 200
+
+@app.route("/review/<int:id>", methods=["DELETE"])
+def delete_review(id):
+    review = Review.query.get(id)
+    if not review:
+        return jsonify({"error": "Review not found"}), 404
+    db.session.delete(review)
+    db.session.commit()
+    return jsonify({"message": "Review deleted"}), 200
