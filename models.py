@@ -143,3 +143,27 @@ class Review(db.Model):
             "rating": self.rating,
             "date": self.date,
         }
+# Tabla Site
+class Site(db.Model):
+    _tablename_ = 'site'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(100), nullable=False)
+    campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
+    max_of_people = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False, default=10000)
+    facilities = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    dimensions = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    camping = relationship("Camping", back_populates="zones")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "campsite_id": self.campsite_id,
+            "status": self.status,
+            "max_of_people": self.max_of_people,
+            "price": self.price,
+            "facilities": self.facilities,
+            "dimensions": self.dimensions,
+        }
