@@ -91,3 +91,55 @@ class Camping(db.Model):
             "zones": [zone.serialize() for zone in self.zones],
             "details": [detail.serialize() for detail in self.details],
         }
+    
+#Table Reservation
+class Reservation(db.Model):
+    __tablename__ = 'reservation'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)
+    site_id = db.Column(db.Integer, ForeignKey('site.id'), nullable=False)
+    start_date = db.Column(Date, nullable=False)
+    end_date = db.Column(Date, nullable=False)
+    number_of_people = db.Column(db.Integer, nullable=False)
+    reservation_date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
+    selected_services = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    total_amount = db.Column(DECIMAL(10, 2), nullable=False, default=0)
+
+    user = relationship("User")
+    site = relationship("Site")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user": self.user.serialize(),
+            "site": self.site.serialize(),
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "number_of_people": self.number_of_people,
+            "reservation_date": self.reservation_date,
+            "selected_services": self.selected_services,  # Cambiado a JSON
+            "total_amount": float(self.total_amount),
+        }
+    
+#Table Review
+class Review(db.Model):
+    __tablename__ = 'review'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)
+    campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    comment = db.Column(db.Text, nullable=True)
+    rating = db.Column(db.Integer, nullable=False)
+    date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
+    
+    user = relationship("User")
+    camping = relationship("Camping")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user": self.user.serialize(),
+            "camping": self.camping.serialize(),
+            "comment": self.comment,
+            "rating": self.rating,
+            "date": self.date,
+        }
