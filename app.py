@@ -254,3 +254,50 @@ def delete_review(id):
     db.session.delete(review)
     db.session.commit()
     return jsonify({"message": "Review deleted"}), 200
+
+# SITE ENDPOINTS
+# ------------------------------------
+@app.route("/site", methods=["POST"])
+def create_site():
+    data = request.get_json()
+    site = Site(
+        name=data["name"],
+        campsite_id=data["campsite_id"],
+        status=data.get("status", "available"),
+        max_of_people=data["max_of_people"],
+        price=data["price"],
+        facilities=data.get("facilities"),
+        dimensions=data.get("dimensions")
+    )
+    db.session.add(site)
+    db.session.commit()
+    return jsonify(site.serialize()), 201
+
+@app.route("/site", methods=["GET"])
+def get_sites(): 
+    sites = Site.query.all()
+    return jsonify([site.serialize() for site in sites])
+
+@app.route("/site/<int:id>", methods=["PUT"])
+def update_site(id):
+    data = request.get_json()
+    site = Site.query.get(id)
+    if not site:
+        return jsonify({"error": "Site not found"}), 404
+    site.name = data.get("name", site.name)
+    site.status = data.get("status", site.status)
+    site.max_of_people = data.get("max_of_people", site.max_of_people)
+    site.price = data.get("price", site.price)
+    site.facilities = data.get("facilities", site.facilities)
+    site.dimensions = data.get("dimensions", site.dimensions)
+    db.session.commit()
+    return jsonify(site.serialize()), 200
+
+@app.route("/site/<int:id>", methods=["DELETE"])
+def delete_site(id):
+    site = Site.query.get(id)
+    if not site:
+        return jsonify({"error": "Site not found"}), 404
+    db.session.delete(site)
+    db.session.commit()
+    return jsonify({"message": "Site deleted"}), 200
