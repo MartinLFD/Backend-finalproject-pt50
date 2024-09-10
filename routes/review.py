@@ -6,7 +6,7 @@ from models import db
 
 review = Blueprint("review", __name__ ,url_prefix="/review")
 
-@Review.route("/review", methods=["POST"])
+@review.route("/review", methods=["POST"])
 def create_review():
     data = request.get_json()
     review = Review(
@@ -19,12 +19,12 @@ def create_review():
     db.session.commit()
     return jsonify(review.serialize()), 201
 
-@Review.route("/review", methods=["GET"])
+@review.route("/review", methods=["GET"])
 def get_reviews(): 
     reviews = Review.query.all()
     return jsonify([review.serialize() for review in reviews])
 
-@Review.route("/review/<int:id>", methods=["PUT"])
+@review.route("/review/<int:id>", methods=["PUT"])
 def update_review(id):
     data = request.get_json()
     review = Review.query.get(id)
@@ -35,7 +35,7 @@ def update_review(id):
     db.session.commit()
     return jsonify(review.serialize()), 200
 
-@Review.route("/review/<int:id>", methods=["DELETE"])
+@review.route("/review/<int:id>", methods=["DELETE"])
 def delete_review(id):
     review = Review.query.get(id)
     if not review:

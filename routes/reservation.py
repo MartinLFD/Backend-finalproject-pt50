@@ -21,12 +21,12 @@ def create_reservation():
     db.session.commit()
     return jsonify(reservation.serialize()), 201
 
-@Reservation.route("/reservation", methods=["GET"])
+@reservation.route("/reservation", methods=["GET"])
 def get_reservations(): 
     reservations = Reservation.query.all()
     return jsonify([reservation.serialize() for reservation in reservations])
 
-@Reservation.route("/reservation/<int:id>", methods=["PUT"])
+@reservation.route("/reservation/<int:id>", methods=["PUT"])
 def update_reservation(id):
     data = request.get_json()
     reservation = Reservation.query.get(id)
@@ -41,7 +41,7 @@ def update_reservation(id):
     db.session.commit()
     return jsonify(reservation.serialize()), 200
 
-@Reservation.route("/reservation/<int:id>", methods=["DELETE"])
+@reservation.route("/reservation/<int:id>", methods=["DELETE"])
 def delete_reservation(id):
     reservation = Reservation.query.get(id)
     if not reservation:
