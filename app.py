@@ -35,18 +35,13 @@ app.register_blueprint(user)
 #CAMPING
 app.register_blueprint(camping)
 #RESERVATION
-
-#REVIEW
-
-#SITES
-
-
-
-# Routes
 app.register_blueprint(reservation)
-
-# Routes
+#REVIEW
 app.register_blueprint(review)
+
+
+
+
 
 # SITE ENDPOINTS
 # ------------------------------------
