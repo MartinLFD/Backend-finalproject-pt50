@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Enum, JSON
 from sqlalchemy.orm import relationship
-
+from datetime import datetime
 db = SQLAlchemy()
 
 
@@ -129,7 +129,7 @@ class Review(db.Model):
     campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
     comment = db.Column(db.Text, nullable=True)
     rating = db.Column(db.Integer, nullable=False)
-    date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
+    date = db.Column(db.DateTime, default=datetime.now)
     
     user = relationship("User")
     camping = relationship("Camping")
@@ -152,8 +152,8 @@ class Site(db.Model):
     status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
     max_of_people = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, default=10000)
-    facilities = db.Column(JSON, nullable=True)  # Cambiado a JSON
-    dimensions = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    facilities = db.Column(JSON, nullable=True) 
+    dimensions = db.Column(JSON, nullable=True)  
     camping = relationship("Camping", back_populates="zones")
 
     def serialize(self):
