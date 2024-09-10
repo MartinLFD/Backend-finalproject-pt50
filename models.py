@@ -89,7 +89,7 @@ class Camping(db.Model):
             "images": self.images,
             "services": self.services,
             "zones": [zone.serialize() for zone in self.zones],
-            "details": [detail.serialize() for detail in self.details],
+            
         }
     
 #Table Reservation
