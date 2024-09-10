@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from models import Role, User, Camping, Reservation, Review, Site
 from datetime import datetime
+from routes.camping import camping
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///camping.db"
@@ -12,6 +13,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 Migrate(app, db)
 CORS(app)
+
+# Routes
+app.register_blueprint(camping)
 
 # Home
 @app.route("/", methods=["GET"])
@@ -301,3 +305,6 @@ def delete_site(id):
     db.session.delete(site)
     db.session.commit()
     return jsonify({"message": "Site deleted"}), 200
+
+if  __name__ == "__main__": 
+    app.run(host= "0.0.0.0", port= 3001, debug= True)
