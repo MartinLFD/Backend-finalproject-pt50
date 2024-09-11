@@ -3,6 +3,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECI
 from sqlalchemy.orm import relationship
 from datetime import datetime
 db = SQLAlchemy()
+#importación 
 
 
 #TABLA ROLE
