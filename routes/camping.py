@@ -45,7 +45,7 @@ def update_camping(id):
     camping.name = data.get("name", camping.name)
     camping.rut_del_negocio = data.get("rut_del_negocio", camping.rut_del_negocio)
     camping.razon_social = data.get("razon_social", camping.razon_social)
-    camping.comuna_id = data.get("comuna_id", camping.comuna_id)
+    camping.comuna = data.get("comuna", camping.comuna)
     camping.region = data.get("region", camping.region)
     camping.telefono = data.get("telefono", camping.telefono)
     camping.direccion = data.get("direccion", camping.direccion)
