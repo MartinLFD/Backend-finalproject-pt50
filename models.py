@@ -101,7 +101,7 @@ class Reservation(db.Model):
     start_date = db.Column(Date, nullable=False)
     end_date = db.Column(Date, nullable=False)
     number_of_people = db.Column(db.Integer, nullable=False)
-    reservation_date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
+    reservation_date = db.Column(DateTime, default=datetime.now)
     selected_services = db.Column(JSON, nullable=True)  # Cambiado a JSON
     total_amount = db.Column(DECIMAL(10, 2), nullable=False, default=0)
 
