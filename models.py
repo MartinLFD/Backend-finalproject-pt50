@@ -54,12 +54,14 @@ class Camping(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     provider_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    rut_del_negocio = db.Column(db.String(12), nullable=False)
+    camping_rut = db.Column(db.String(12), nullable=False)
     razon_social = db.Column(db.String(100), nullable=False)
     comuna = db.Column(db.String(50), nullable=False)
     region = db.Column(db.String(50), nullable=False)
-    telefono = db.Column(db.String(15), nullable=False)
-    direccion = db.Column(db.String(255), nullable=False)
+    landscape = db.Column(db.String(200), nullable = True)
+    type = db.Column(db.String(200), nullable = True)
+    phone = db.Column(db.String(15), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
     url_web = db.Column(db.String(255), nullable=True)
     url_google_maps = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
@@ -76,12 +78,14 @@ class Camping(db.Model):
             "id": self.id,
             "provider": self.provider.serialize(),
             "name": self.name,
-            "rut_del_negocio": self.rut_del_negocio,
+            "camping_rut": self.camping_rut,
             "razon_social": self.razon_social,
             "comuna": self.comuna,
             "region": self.region,
-            "telefono": self.telefono,
-            "direccion": self.direccion,
+            "landscape": self.landscape,
+            "type": self.type,
+            "phone": self.phone,
+            "address": self.address,
             "url_web": self.url_web,
             "url_google_maps": self.url_google_maps,
             "description": self.description,
