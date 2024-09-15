@@ -13,12 +13,14 @@ def create_camping():
     camping = Camping(
         provider_id=data["provider_id"],
         name=data["name"],
-        rut_del_negocio=data["rut_del_negocio"],
+        camping_rut=data["camping_rut"],
         razon_social=data["razon_social"],
         comuna=data["comuna"],
         region=data["region"],
-        telefono=data["telefono"],
-        direccion=data["direccion"],
+        landscape=data.get("landscape"),
+        type=data.get("type"),
+        phone=data["phone"],
+        address=data["address"],
         url_web=data.get("url_web"),
         url_google_maps=data.get("url_google_maps"),
         description=data.get("description"),
@@ -27,9 +29,12 @@ def create_camping():
         images=data.get("images"),
         services=data.get("services")
     )
+    
     db.session.add(camping)
     db.session.commit()
+    
     return jsonify(camping.serialize()), 201
+
 
 @camping.route("/camping", methods=["GET"])
 def get_campings(): 
