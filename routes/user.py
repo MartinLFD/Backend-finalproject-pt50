@@ -24,6 +24,22 @@ def create_user():
     db.session.commit()
     return jsonify(user.serialize()), 201
 
+@user.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+    
+ 
+    user = User.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"message": "Login successful", "user": user.serialize()}), 200
+
+
+
+
 @user.route("/user", methods=["GET"])
 def get_users(): 
     users = User.query.all()
