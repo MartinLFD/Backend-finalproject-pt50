@@ -1,8 +1,10 @@
-from flask import Blueprint
-from models import User
+from flask import Blueprint, request, jsonify
+from models import User, db
 from datetime import datetime
-from flask import request, jsonify
-from models import db
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import create_access_token
+
+bcrypt = Bcrypt()
 user = Blueprint("user", __name__ ,url_prefix="/user")
 # ------------------------------------
 # USER ENDPOINTS
@@ -10,12 +12,15 @@ user = Blueprint("user", __name__ ,url_prefix="/user")
 @user.route("/user", methods=["POST"])
 def create_user():
     data = request.get_json()
+
+     # linea para encriptar la contraseña
+    hashed_password = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
     user = User(
         first_name=data["first_name"],
         last_name=data["last_name"],
         rut=data["rut"],
         email=data["email"],
-        password=data["password"],
+        password=hashed_password,  # se guarda la contraseña encriptada
         phone=data.get("phone"),
         role_id=data["role_id"],
         registration_date=datetime.now()
@@ -30,12 +35,24 @@ def login():
     email = data.get("email")
     password = data.get("password")
     
- 
+    # buscamos el usuario por email
     user = User.query.filter_by(email=email).first()
     
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify({"message": "Login successful", "user": user.serialize()}), 200
+    
+    # para verificar la contraseña
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid credentials"}), 401
+    
+    # si la autenticación es exitosa generar un token JWT
+    access_token = create_access_token(identity=user.id)
+    
+    return jsonify({
+        "message": "Login successful",
+        "token": access_token,
+        "user": user.serialize()
+    }), 200
 
 
 
