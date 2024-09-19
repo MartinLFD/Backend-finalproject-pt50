@@ -16,9 +16,9 @@ def create_site():
         price=data["price"],
         facilities=data.get("facilities"),
         dimensions=data.get("dimensions"),
-        review=data.get("review", ""),  # New field for review
-        url_map_site=data.get("url_map_site", ""),  # New field for map URL
-        url_photo_site=data.get("url_photo_site", "")  # New field for photo URL
+        review=data.get("review", ""),  # nuevo campo para reseña de cada siio
+        url_map_site=data.get("url_map_site", ""),  # foto del mapa donde esta el sitio
+        url_photo_site=data.get("url_photo_site", "")  # foto del sitio
     )
     db.session.add(site)
     db.session.commit()
@@ -41,9 +41,9 @@ def update_site(id):
     site.price = data.get("price", site.price)
     site.facilities = data.get("facilities", site.facilities)
     site.dimensions = data.get("dimensions", site.dimensions)
-    site.review = data.get("review", site.review)  # Update review
-    site.url_map_site = data.get("url_map_site", site.url_map_site)  # Update map URL
-    site.url_photo_site = data.get("url_photo_site", site.url_photo_site)  # Update photo URL
+    site.review = data.get("review", site.review)  # comentario 
+    site.url_map_site = data.get("url_map_site", site.url_map_site)  # foto mapa
+    site.url_photo_site = data.get("url_photo_site", site.url_photo_site)  # foto sitio
     db.session.commit()
     return jsonify(site.serialize()), 200
 
