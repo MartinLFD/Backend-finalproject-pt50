@@ -149,16 +149,18 @@ class Review(db.Model):
             "date": self.date,
         }
 # Tabla Site
-class Site(db.Model):
-    _tablename_ = 'site'
+    __tablename__ = 'site' 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
     campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
     status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
     max_of_people = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, default=10000)
-    facilities = db.Column(JSON, nullable=True) 
-    dimensions = db.Column(JSON, nullable=True)  
+    facilities = db.Column(JSON, nullable=True)
+    dimensions = db.Column(JSON, nullable=True)
+    review = db.Column(db.Text, nullable=True)  # Campo para almacenar reseñas específicas del sitio
+    url_map_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL del mapa del sitio
+    url_photo_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL de la foto del sitio
     camping = relationship("Camping", back_populates="zones")
 
     def serialize(self):
@@ -171,4 +173,7 @@ class Site(db.Model):
             "price": self.price,
             "facilities": self.facilities,
             "dimensions": self.dimensions,
+            "review": self.review,  # Incluido en la serialización
+            "url_map_site": self.url_map_site,  # Incluido en la serialización
+            "url_photo_site": self.url_photo_site,  # Incluido en la serialización
         }

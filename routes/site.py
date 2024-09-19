@@ -3,7 +3,7 @@ from models import Site
 from models import db
 from flask import Blueprint
 
-site = Blueprint("site", __name__ ,url_prefix="/site")
+site = Blueprint("site", __name__, url_prefix="/site")
 
 @site.route("/site", methods=["POST"])
 def create_site():
@@ -15,7 +15,10 @@ def create_site():
         max_of_people=data["max_of_people"],
         price=data["price"],
         facilities=data.get("facilities"),
-        dimensions=data.get("dimensions")
+        dimensions=data.get("dimensions"),
+        review=data.get("review", ""),  # New field for review
+        url_map_site=data.get("url_map_site", ""),  # New field for map URL
+        url_photo_site=data.get("url_photo_site", "")  # New field for photo URL
     )
     db.session.add(site)
     db.session.commit()
@@ -38,6 +41,9 @@ def update_site(id):
     site.price = data.get("price", site.price)
     site.facilities = data.get("facilities", site.facilities)
     site.dimensions = data.get("dimensions", site.dimensions)
+    site.review = data.get("review", site.review)  # Update review
+    site.url_map_site = data.get("url_map_site", site.url_map_site)  # Update map URL
+    site.url_photo_site = data.get("url_photo_site", site.url_photo_site)  # Update photo URL
     db.session.commit()
     return jsonify(site.serialize()), 200
 
