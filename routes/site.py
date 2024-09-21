@@ -3,24 +3,28 @@ from models import Site
 from models import db
 from flask import Blueprint
 
-site = Blueprint("site", __name__ ,url_prefix="/site")
+site = Blueprint("site", __name__, url_prefix="/site")
 
 @site.route("/site", methods=["POST"])
 def create_site():
     data = request.get_json()
     site = Site(
         name=data["name"],
-        campsite_id=data["campsite_id"],
+        camping_id=data["camping_id"], # se cambio a camping_id
         status=data.get("status", "available"),
         max_of_people=data["max_of_people"],
         price=data["price"],
         facilities=data.get("facilities"),
-        dimensions=data.get("dimensions")
+        dimensions=data.get("dimensions"),
+        review=data.get("review", ""),  # nuevo campo para reseña de cada siio
+        url_map_site=data.get("url_map_site", ""),  # foto del mapa donde esta el sitio
+        url_photo_site=data.get("url_photo_site", "")  # foto del sitio
     )
     db.session.add(site)
     db.session.commit()
     return jsonify(site.serialize()), 201
 
+# falta cambiar en adelante 
 @site.route("/site", methods=["GET"])
 def get_sites(): 
     sites = Site.query.all()
@@ -38,6 +42,9 @@ def update_site(id):
     site.price = data.get("price", site.price)
     site.facilities = data.get("facilities", site.facilities)
     site.dimensions = data.get("dimensions", site.dimensions)
+    site.review = data.get("review", site.review)  # comentario 
+    site.url_map_site = data.get("url_map_site", site.url_map_site)  # foto mapa
+    site.url_photo_site = data.get("url_photo_site", site.url_photo_site)  # foto sitio
     db.session.commit()
     return jsonify(site.serialize()), 200
 
