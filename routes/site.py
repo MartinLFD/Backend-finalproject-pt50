@@ -10,7 +10,7 @@ def create_site():
     data = request.get_json()
     site = Site(
         name=data["name"],
-        campsite_id=data["campsite_id"],
+        camping_id=data["camping_id"], # se cambio a camping_site
         status=data.get("status", "available"),
         max_of_people=data["max_of_people"],
         price=data["price"],
@@ -24,6 +24,7 @@ def create_site():
     db.session.commit()
     return jsonify(site.serialize()), 201
 
+# falta cambiar en adelante 
 @site.route("/site", methods=["GET"])
 def get_sites(): 
     sites = Site.query.all()
