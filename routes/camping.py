@@ -41,6 +41,11 @@ def get_campings():
     campings = Camping.query.all()
     return jsonify([camping.serialize() for camping in campings])
 
+@camping.route("/camping/<int:id>", methods=["GET"])
+def get_camping_by_id(id):
+    camping = Camping.query.get(id)
+    return jsonify(camping.serialize()), 200
+
 @camping.route("/camping/<int:id>", methods=["PUT"])
 def update_camping(id):
     data = request.get_json()
