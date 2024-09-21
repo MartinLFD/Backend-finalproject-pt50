@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 95f364b4978a
+Revision ID: 8faf52470494
 Revises: 
-Create Date: 2024-09-15 13:50:42.409388
+Create Date: 2024-09-21 16:37:10.972096
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '95f364b4978a'
+revision = '8faf52470494'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -63,24 +63,27 @@ def upgrade():
     op.create_table('review',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('campsite_id', sa.Integer(), nullable=False),
+    sa.Column('camping_id', sa.Integer(), nullable=False),
     sa.Column('comment', sa.Text(), nullable=True),
     sa.Column('rating', sa.Integer(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['campsite_id'], ['camping.id'], ),
+    sa.ForeignKeyConstraint(['camping_id'], ['camping.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('site',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('campsite_id', sa.Integer(), nullable=False),
+    sa.Column('camping_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.Enum('available', 'unavailable', name='site_status'), nullable=True),
     sa.Column('max_of_people', sa.Integer(), nullable=False),
     sa.Column('price', sa.Integer(), nullable=False),
     sa.Column('facilities', sa.JSON(), nullable=True),
     sa.Column('dimensions', sa.JSON(), nullable=True),
-    sa.ForeignKeyConstraint(['campsite_id'], ['camping.id'], ),
+    sa.Column('review', sa.Text(), nullable=True),
+    sa.Column('url_map_site', sa.String(length=255), nullable=True),
+    sa.Column('url_photo_site', sa.String(length=255), nullable=True),
+    sa.ForeignKeyConstraint(['camping_id'], ['camping.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('reservation',

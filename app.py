@@ -13,7 +13,7 @@ from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://joaodevc_admin:dP;diDJNtVNy@45.236.165.191/joaodevc_camping'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://joaodevc_admin:dP;diDJNtVNy@45.236.165.191/joaodevc_camping_definitive'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "super_secret"
 app.config["SECRET_KEY"] = "super_super_secret"
