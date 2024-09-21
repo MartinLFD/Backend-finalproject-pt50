@@ -10,7 +10,7 @@ def create_site():
     data = request.get_json()
     site = Site(
         name=data["name"],
-        camping_id=data["camping_id"], # se cambio a camping_site
+        camping_id=data["camping_id"], # se cambio a camping_id
         status=data.get("status", "available"),
         max_of_people=data["max_of_people"],
         price=data["price"],

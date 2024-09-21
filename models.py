@@ -131,7 +131,7 @@ class Review(db.Model):
     __tablename__ = 'review'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)
-    campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    camping_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
     comment = db.Column(db.Text, nullable=True)
     rating = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
