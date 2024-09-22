@@ -11,7 +11,7 @@ def create_review():
     data = request.get_json()
     review = Review(
         user_id=data["user_id"],
-        campsite_id=data["campsite_id"],
+        camping_id=data["camping_id"],
         comment=data.get("comment"),
         rating=data["rating"]
     )
