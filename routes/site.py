@@ -56,3 +56,11 @@ def delete_site(id):
     db.session.delete(site)
     db.session.commit()
     return jsonify({"message": "Site deleted"}), 200
+
+
+@site.route("/<int:camping_id>", methods=["GET"])
+def get_reviews_by_camping(camping_id):
+    sites = Site.query.filter_by(camping_id=camping_id).all()
+    if not site:
+        return jsonify({"error": "No site found for this camping"}), 404
+    return jsonify([site.serialize() for site in sites]), 200
