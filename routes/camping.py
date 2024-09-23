@@ -77,3 +77,10 @@ def delete_camping(id):
     db.session.delete(camping)
     db.session.commit()
     return jsonify({"message": "Camping deleted"}), 200
+
+@camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
+def get_campings_by_provider(provider_id):
+    campings = Camping.query.filter_by(provider_id=provider_id).all()
+    if not campings:
+        return jsonify({"error": "No campings found for this provider"}), 404
+    return jsonify([camping.serialize() for camping in campings]), 200
