@@ -40,6 +40,7 @@ def update_reservation(id):
     reservation = Reservation.query.get(id)
     if not reservation:
         return jsonify({"error": "Reservation not found"}), 404
+    reservation.user_id = data.get("user_id", reservation.user_id)
     reservation.site_id = data.get("site_id", reservation.site_id)
     reservation.start_date = data.get("start_date", reservation.start_date)
     reservation.end_date = data.get("end_date", reservation.end_date)
