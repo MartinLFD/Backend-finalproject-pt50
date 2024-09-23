@@ -43,3 +43,10 @@ def delete_review(id):
     db.session.delete(review)
     db.session.commit()
     return jsonify({"message": "Review deleted"}), 200
+
+@review.route("/camping/<int:camping_id>/reviews", methods=["GET"])
+def get_reviews_by_camping(camping_id):
+    reviews = Review.query.filter_by(camping_id=camping_id).all()
+    if not reviews:
+        return jsonify({"error": "No reviews found for this camping"}), 404
+    return jsonify([review.serialize() for review in reviews]), 200
