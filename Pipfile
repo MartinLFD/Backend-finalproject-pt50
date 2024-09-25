@@ -12,6 +12,7 @@ flask-jwt-extended = "*"
 flask-bcrypt = "*"
 psycopg2-binary = "*"
 pymysql = "*"
+gunicorn = "*"
 
 [dev-packages]
 
