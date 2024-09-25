@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from models import db
 from flask_migrate import Migrate
 from flask_cors import CORS
-from datetime import datetime
 from routes.role import role
 from routes.user import user
 from routes.camping import camping
