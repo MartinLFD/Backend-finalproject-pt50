@@ -10,6 +10,8 @@ from routes.review import review
 from routes.site import site
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
+import os
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://joaodevc_admin:dP;diDJNtVNy@45.236.165.191/joaodevc_camping_definitive'
@@ -48,5 +50,5 @@ app.register_blueprint(review)
 app.register_blueprint(site)
 
 
-if  __name__ == "__main__": 
-    app.run(host= "0.0.0.0", port= 3001, debug= True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
