@@ -1,5 +1,5 @@
 from flask import Blueprint
-from models import Reservation, User
+from models import Reservation, User, Site
 from datetime import datetime
 from flask import request, jsonify
 from models import db
@@ -7,39 +7,45 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 reservation = Blueprint("reservation", __name__ ,url_prefix="/reservation")
+
 @reservation.route("/reservation", methods=["POST"])
+@jwt_required()  
 def create_reservation():
-    try:
-        data = request.get_json()
+    data = request.get_json()
+    current_user_id = get_jwt_identity()
+    
+    # Obtener el sitio para calcular el precio
+    site = Site.query.get(data["site_id"])
+    if not site:
+        return jsonify({"error": "Site not found"}), 404
+    
+    # Calcular la cantidad de noches
+    start_date = datetime.strptime(data["start_date"], '%Y-%m-%d')
+    end_date = datetime.strptime(data["end_date"], '%Y-%m-%d')
+    num_nights = (end_date - start_date).days
 
-        start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+    if num_nights <= 0:
+        return jsonify({"error": "End date must be after start date"}), 400
+    
+    # Calcular el monto total
+    total_amount = num_nights * site.price
+    
+    reservation = Reservation(
+        user_id=current_user_id,
+        site_id=data["site_id"],
+        start_date=start_date,
+        end_date=end_date,
+        number_of_people=data["number_of_people"],
+        selected_services=data.get("selected_services"),
+        total_amount=total_amount  # Guardar el monto total calculado
+    )
+    
+    db.session.add(reservation)
+    db.session.commit()
+    
+    # Solo retorna el id del sitio y demás datos, sin intentar serializar el objeto `site`.
+    return jsonify(reservation.serialize()), 201
 
-        if "reservation_date" not in data or not data["reservation_date"]:
-            reservation_date = datetime.now()
-        else:
-            reservation_date = datetime.strptime(data["reservation_date"], "%Y-%m-%dT%H:%M:%S")
-
-        reservation = Reservation(
-            user_id=data["user_id"],
-            site_id=data["site_id"],
-            start_date=start_date,
-            end_date=end_date,
-            number_of_people=data["number_of_people"],
-            reservation_date=reservation_date,
-            selected_services=data.get("selected_services", None),  
-            total_amount=data["total_amount"]
-        )
-
-        db.session.add(reservation)
-        db.session.commit()
-
-        
-        return jsonify(reservation.serialize()), 201
-
-    except Exception as e:
-        
-        return jsonify({"error": str(e)}), 400
 
 @reservation.route("/reservation", methods=["GET"])
 @jwt_required()

@@ -10,15 +10,15 @@ def create_site():
     data = request.get_json()
     site = Site(
         name=data["name"],
-        camping_id=data["camping_id"], # se cambio a camping_id
+        camping_id=data["camping_id"], 
         status=data.get("status", "available"),
         max_of_people=data["max_of_people"],
         price=data["price"],
         facilities=data.get("facilities"),
         dimensions=data.get("dimensions"),
-        review=data.get("review", ""),  # nuevo campo para reseña de cada siio
-        url_map_site=data.get("url_map_site", ""),  # foto del mapa donde esta el sitio
-        url_photo_site=data.get("url_photo_site", "")  # foto del sitio
+        review=data.get("review", ""),  
+        url_map_site=data.get("url_map_site", ""),  
+        url_photo_site=data.get("url_photo_site", "")  
     )
     db.session.add(site)
     db.session.commit()
@@ -64,3 +64,19 @@ def get_reviews_by_camping(camping_id):
     if not site:
         return jsonify({"error": "No site found for this camping"}), 404
     return jsonify([site.serialize() for site in sites]), 200
+
+@site.route("/site/<int:id>", methods=["GET"])
+def get_site_by_id(id):
+    site = Site.query.get(id)
+    if not site:
+        return jsonify({"error": "Site not found"}), 404
+    return jsonify(site.serialize()), 200
+
+
+@site.route('/camping/<int:camping_id>/sites', methods=['GET'])
+def get_sites_by_camping(camping_id):
+    try:
+        sites = Site.query.filter_by(camping_id=camping_id).all()
+        return jsonify([site.serialize() for site in sites]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
