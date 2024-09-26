@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Enum, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-db = SQLAlchemy()
+from extensions import db
 #importación 
 
 
