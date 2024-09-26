@@ -30,8 +30,11 @@ def create_reservation():
     return jsonify(reservation.serialize()), 201
 
 @reservation.route("/reservation", methods=["GET"])
-def get_reservations(): 
-    reservations = Reservation.query.all()
+@jwt_required()
+def get_reservation_for_user():
+    id_user_reservation = get_jwt_identity()
+    reservations = Reservation.query.filter_by(user_id=id_user_reservation).all()
+
     return jsonify([reservation.serialize() for reservation in reservations])
 
 @reservation.route("/reservation/<int:id>", methods=["PUT"])
@@ -58,3 +61,4 @@ def delete_reservation(id):
     db.session.delete(reservation)
     db.session.commit()
     return jsonify({"message": "Reservation deleted"}), 200
+
