@@ -6,6 +6,18 @@ from models import db
 
 camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
+@camping.route('/camping/<int:id>', methods=['GET'])
+def get_camping_by_id(id):
+    try:
+        camping = Camping.query.get(id)
+        if camping is None:
+            return jsonify({"error": "Camping not found"}), 404
+        return jsonify(camping.serialize()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 @camping.route("/camping", methods=["POST"])
 
 def create_camping():
@@ -53,12 +65,14 @@ def update_camping(id):
     if not camping:
         return jsonify({"error": "Camping not found"}), 404
     camping.name = data.get("name", camping.name)
-    camping.rut_del_negocio = data.get("rut_del_negocio", camping.rut_del_negocio)
+    camping.camping_rut= data.get("camping_rut", camping.camping_rut)
     camping.razon_social = data.get("razon_social", camping.razon_social)
     camping.comuna = data.get("comuna", camping.comuna)
     camping.region = data.get("region", camping.region)
-    camping.telefono = data.get("telefono", camping.telefono)
-    camping.direccion = data.get("direccion", camping.direccion)
+    camping.landscape =  data.get("landscape", camping.landscape)
+    camping.type =  data.get("type", camping.type)
+    camping.phone = data.get("phone", camping.phone)
+    camping.address= data.get("address", camping.address)
     camping.url_web = data.get("url_web", camping.url_web)
     camping.url_google_maps = data.get("url_google_maps", camping.url_google_maps)
     camping.description = data.get("description", camping.description)
