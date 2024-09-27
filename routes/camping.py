@@ -6,7 +6,7 @@ from models import db
 
 camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
-@camping.route('/camping/<int:id>', methods=['GET'])
+@camping.route('/camping/<int:id>', methods=['GET'], endpoint='get_camping_by_id_unique')
 def get_camping_by_id(id):
     try:
         camping = Camping.query.get(id)
