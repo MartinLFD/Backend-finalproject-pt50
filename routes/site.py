@@ -24,7 +24,6 @@ def create_site():
     db.session.commit()
     return jsonify(site.serialize()), 201
 
-# falta cambiar en adelante 
 @site.route("/site", methods=["GET"])
 def get_sites(): 
     sites = Site.query.all()
@@ -80,3 +79,5 @@ def get_sites_by_camping(camping_id):
         return jsonify([site.serialize() for site in sites]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    

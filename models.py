@@ -114,6 +114,21 @@ class Reservation(db.Model):
     site = relationship("Site")
 
     def serialize(self):
+        site = Site.query.get(self.site_id)
+        
+        # para una lista de servicios seleccionados con sus detalles (nombre y precio)
+        selected_services_details = []
+        if self.selected_services:
+            camping = site.camping  # obtenemos el camping asociado al sitio
+            if camping and camping.services:
+                for service_name in self.selected_services:
+                    # para verificar si el servicio existe en los servicios del camping
+                    if service_name in camping.services:
+                        selected_services_details.append({
+                            "name": service_name,
+                            "price": camping.services[service_name]
+                        })
+
         return {
             "id": self.id,
             "user": self.user.serialize(),
@@ -123,9 +138,10 @@ class Reservation(db.Model):
             "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
             "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
-            "selected_services": self.selected_services,
+            "selected_services": selected_services_details,  # Detalles de servicios seleccionados
             "total_amount": float(self.total_amount),
         }
+    
     
 #Table Review
 class Review(db.Model):
@@ -161,7 +177,7 @@ class Site(db.Model):
     price = db.Column(db.Integer, nullable=False, default=10000)
     facilities = db.Column(JSON, nullable=True)
     dimensions = db.Column(JSON, nullable=True)
-    review = db.Column(db.Text, nullable=True)  # Campo para almacenar reseñas específicas del sitio
+    review = db.Column(db.Text, nullable=True)  
     url_map_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL del mapa del sitio
     url_photo_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL de la foto del sitio
     
@@ -180,4 +196,5 @@ class Site(db.Model):
             "review": self.review, 
             "url_map_site": self.url_map_site, 
             "url_photo_site": self.url_photo_site, 
+            "camping_services": self.camping.services if self.camping else {}  # Cambiado para evitar errores
         }
