@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Enum, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-db = SQLAlchemy()
+from extensions import db
 #importación 
 
 
@@ -117,12 +117,13 @@ class Reservation(db.Model):
         return {
             "id": self.id,
             "user": self.user.serialize(),
-            "site": self.site.serialize(),
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "site_id": self.site_id,
+            "camping_name": self.site.camping.name,  
+            "start_date": self.start_date.strftime('%Y-%m-%d'),
+            "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
-            "reservation_date": self.reservation_date,
-            "selected_services": self.selected_services,  # Cambiado a JSON
+            "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
+            "selected_services": self.selected_services,
             "total_amount": float(self.total_amount),
         }
     

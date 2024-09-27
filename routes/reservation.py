@@ -1,5 +1,5 @@
 from flask import Blueprint
-from models import Reservation
+from models import Reservation, User, Site
 from datetime import datetime
 from flask import request, jsonify
 from models import db
@@ -7,27 +7,45 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 reservation = Blueprint("reservation", __name__ ,url_prefix="/reservation")
+
 @reservation.route("/reservation", methods=["POST"])
+@jwt_required()  
 def create_reservation():
     data = request.get_json()
+    current_user_id = get_jwt_identity()
+    
+    # Obtener el sitio para calcular el precio
+    site = Site.query.get(data["site_id"])
+    if not site:
+        return jsonify({"error": "Site not found"}), 404
+    
+    # Calcular la cantidad de noches
+    start_date = datetime.strptime(data["start_date"], '%Y-%m-%d')
+    end_date = datetime.strptime(data["end_date"], '%Y-%m-%d')
+    num_nights = (end_date - start_date).days
 
-     
-    start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-    end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
-    reservation_date = datetime.now() if "reservation_date" not in data else datetime.strptime(data["reservation_date"], "%Y-%m-%dT%H:%M:%S") ##OJO JOSE ALERTA ROJA
+    if num_nights <= 0:
+        return jsonify({"error": "End date must be after start date"}), 400
+    
+    # Calcular el monto total
+    total_amount = num_nights * site.price
+    
     reservation = Reservation(
-        user_id=data["user_id"],
+        user_id=current_user_id,
         site_id=data["site_id"],
         start_date=start_date,
         end_date=end_date,
         number_of_people=data["number_of_people"],
-        reservation_date=reservation_date,
         selected_services=data.get("selected_services"),
-        total_amount=data["total_amount"]
+        total_amount=total_amount  # Guardar el monto total calculado
     )
+    
     db.session.add(reservation)
     db.session.commit()
+    
+    # Solo retorna el id del sitio y demás datos, sin intentar serializar el objeto `site`.
     return jsonify(reservation.serialize()), 201
+
 
 @reservation.route("/reservation", methods=["GET"])
 @jwt_required()
@@ -62,3 +80,16 @@ def delete_reservation(id):
     db.session.commit()
     return jsonify({"message": "Reservation deleted"}), 200
 
+@reservation.route("/user/<int:user_id>/reservations", methods=["GET"])
+@jwt_required()
+def get_reservations_by_user_id(user_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"error": "User not found"}), 404
+
+    if current_user.role_id != 1 and current_user_id != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    reservations = Reservation.query.filter_by(user_id=user_id).all()
+    return jsonify([reservation.serialize() for reservation in reservations]), 200
