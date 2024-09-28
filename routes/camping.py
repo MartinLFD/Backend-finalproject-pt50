@@ -3,6 +3,10 @@ from models import Camping
 from datetime import datetime
 from flask import request, jsonify
 from models import db
+from auth_utils import view_permission_required
+from flask_jwt_extended import (
+    jwt_required,
+)
 
 camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
@@ -93,6 +97,8 @@ def delete_camping(id):
     return jsonify({"message": "Camping deleted"}), 200
 
 @camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
+@jwt_required()  # Verifica que el usuario esté autenticado
+@view_permission_required([2])  # Permite solo a usuarios con role_id 2 (Proveedor)
 def get_campings_by_provider(provider_id):
     campings = Camping.query.filter_by(provider_id=provider_id).all()
     if not campings:
