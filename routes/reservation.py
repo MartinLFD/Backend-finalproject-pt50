@@ -78,7 +78,7 @@ def update_reservation(id):
     db.session.commit()
     return jsonify(reservation.serialize()), 200
 
-@reservation.route("/reservation/<int:id>", methods=["DELETE"])
+@reservation.route("/delete-reservation/<int:id>", methods=["DELETE"])  # Cambié el nombre de la ruta
 @jwt_required()
 def delete_reservation(id):
     data = request.get_json()
@@ -101,6 +101,7 @@ def delete_reservation(id):
     db.session.commit()
     
     return jsonify({"message": "Reservation deleted"}), 200
+
 
 @reservation.route("/user/<int:user_id>/reservations", methods=["GET"])
 @jwt_required()
