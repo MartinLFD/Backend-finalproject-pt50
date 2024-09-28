@@ -117,3 +117,15 @@ def get_reservation_by_user(user_id):
     
     
     return jsonify([reservation.serialize() for reservation in reservations]), 200
+
+@reservation.route("/reservation/<int:id>/view-all-details", methods=["GET"])
+@jwt_required()
+def get_reservation_details(id):
+    reservation = Reservation.query.get(id)
+    if not reservation:
+        return jsonify({"error": "Reservation not found"}), 404
+
+    serialized_reservation = reservation.serialize()
+    print("Detalles de la reserva serializada:", serialized_reservation)
+    
+    return jsonify(serialized_reservation), 200
