@@ -1,3 +1,5 @@
+# user.py
+
 from flask import Blueprint, request, jsonify
 from models import User, db
 from datetime import datetime
@@ -9,6 +11,7 @@ from flask_jwt_extended import (
     set_access_cookies,
     unset_jwt_cookies
 )
+from auth_utils import role_required
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -16,11 +19,9 @@ user = Blueprint("user", __name__, url_prefix="/user")
 @user.route("/create-one-user", methods=["POST"])
 def create_user():
     data = request.get_json()
-    # Validar datos de entrada antes de procesarlos
     if not all([data.get("first_name"), data.get("last_name"), data.get("rut"), data.get("email"), data.get("password")]):
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Verificar si el correo ya está registrado
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "Email already in use"}), 400
     
@@ -52,33 +53,23 @@ def login():
     if not bcrypt.check_password_hash(user.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
     
-    # Crear token de acceso
     access_token = create_access_token(identity=user.id)
-    print("Token generado:", access_token)  # Verificar token generado
-
-    # Serializar el usuario
     user_data = user.serialize()
-    print("Usuario autenticado:", user_data)
 
     response = jsonify({
         "message": "Login successful",
         "user": user_data,
-        "token": access_token  # Incluir el token en la respuesta
+        "token": access_token
     })
     
-    # Establecer la cookie con el token de acceso
     set_access_cookies(response, access_token)
-    
     return response, 200
-
-
 
 # Logout
 @user.route("/logout-user", methods=["POST"])
 @jwt_required()
 def logout():
     response = jsonify({"message": "Logout successful"})
-    # Eliminar la cookie que contiene el token
     unset_jwt_cookies(response)
     return response, 200
 
@@ -95,6 +86,7 @@ def get_current_user():
 # Actualizar información del usuario (nombres, apellidos)
 @user.route("/update-user-info", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])  # Permitir a usuarios con role_id 2 (Proveedor) y 3 (Cliente)
 def update_user():
     data = request.get_json()
     current_user_id = get_jwt_identity()
@@ -114,6 +106,7 @@ def update_user():
 # Actualizar correo electrónico
 @user.route("/update-user-email", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_email():
     data = request.get_json()
     current_user_id = get_jwt_identity()
@@ -139,6 +132,7 @@ def update_email():
 # Actualizar contraseña
 @user.route("/update-user-password", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_password():
     data = request.get_json()
     current_user_id = get_jwt_identity()
@@ -162,6 +156,7 @@ def update_password():
 # Actualizar teléfono
 @user.route("/update-user-phone", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_phone():
     data = request.get_json()
     current_user_id = get_jwt_identity()
