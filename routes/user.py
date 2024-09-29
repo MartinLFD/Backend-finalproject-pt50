@@ -15,6 +15,30 @@ from auth_utils import role_required
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
+
+# obtener usuario:
+@user.route("/get-user-test", methods=["GET"])
+def get_user():
+    try:
+        # Obtiene todos los usuarios de la base de datos
+        users = User.query.all()
+
+        # Serializa los usuarios y los devuelve como una lista JSON
+        users_list = [user.serialize() for user in users]
+
+        return jsonify({
+            "status": "success",
+            "users": users_list
+        }), 200
+    except Exception as e:
+        # En caso de error, retorna un mensaje de error
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+
 # Crear usuario
 @user.route("/create-one-user", methods=["POST"])
 def create_user():
