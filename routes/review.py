@@ -23,9 +23,10 @@ def create_review():
 
 #Crear endpoint filtrando por Id de camping
 #Investigar query.sum 
-@review.route("/camping/<int:camping_id>/review", methods=["GET"])
-def get_reviews(): 
-    reviews = Review.query.all()
+@review.route("/get-comments-on-camping/<int:camping_id>/get-review", methods=["GET"])
+def get_reviews(camping_id): 
+    reviews = Review.query.filter_by(camping_id=camping_id).all()
+    
     return jsonify([review.serialize() for review in reviews])
 
 @review.route("/review/<int:id>", methods=["PUT"])
@@ -48,7 +49,7 @@ def delete_review(id):
     db.session.commit()
     return jsonify({"message": "Review deleted"}), 200
 
-@review.route("/camping/<int:camping_id>/reviews", methods=["GET"])
+@review.route("/get-camping-rating/<int:camping_id>/from-reviews", methods=["GET"])
 def get_reviews_by_camping(camping_id):
     reviews = Review.query.filter_by(camping_id=camping_id).all()
     if not reviews:
