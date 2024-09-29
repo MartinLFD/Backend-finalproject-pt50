@@ -138,7 +138,9 @@ class Reservation(db.Model):
             "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
             "selected_services": selected_services_details,
             "total_amount": float(self.total_amount),
+            "camping_services": list(site.camping.services.keys()) if site.camping and isinstance(site.camping.services, dict) else []  # Asegurar que services sea un array de keys
         }
+    
     
     
 #Table Review

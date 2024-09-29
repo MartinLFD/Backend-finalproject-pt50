@@ -81,3 +81,22 @@ def get_sites_by_camping(camping_id):
         return jsonify({"error": str(e)}), 500
     
     
+# Ruta para actualizar el estado de un sitio
+@site.route("/update-site/<int:id>/changue-status", methods=["PUT"])
+def update_site_status(id):
+    try:
+        data = request.get_json()
+        new_status = data.get("status")
+        if new_status not in ["available", "unavailable"]:
+            return jsonify({"error": "Estado no válido. Debe ser 'available' o 'unavailable'"}), 400
+
+        site = Site.query.get(id)
+        if not site:
+            return jsonify({"error": "Sitio no encontrado"}), 404
+
+        site.status = new_status
+        db.session.commit()
+        return jsonify({"message": "Estado del sitio actualizado", "site": site.serialize()}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

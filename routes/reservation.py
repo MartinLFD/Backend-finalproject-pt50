@@ -1,10 +1,13 @@
 from flask import Blueprint
-from models import Reservation, User, Site
+from models import Reservation, User, Site, Camping
 from datetime import datetime
 from flask import request, jsonify
 from models import db
 from extensions import bcrypt
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from auth_utils import view_permission_required
+
+
 
 reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
 
@@ -103,30 +106,56 @@ def delete_reservation(id):
     return jsonify({"message": "Reservation deleted"}), 200
 
 
-@reservation.route("/user/<int:user_id>/reservations", methods=["GET"])
+@reservation.route("/view-reservations-customer/<int:user_id>/all-details", methods=["GET"])
 @jwt_required()
-def get_reservation_by_user(user_id):
+@view_permission_required([3])  # Solo permite a clientes acceder a sus reservas
+def get_reservations_and_details_by_user(user_id):
     current_user_id = get_jwt_identity()
     if current_user_id != user_id:
         return jsonify({"error": "No autorizado"}), 403
-    
-    # para obtener todas las reservas del usuario authenticado
+
+    # Obtener todas las reservas del usuario autenticado con detalles relacionados
     reservations = Reservation.query.filter_by(user_id=user_id).all()
     
     if not reservations:
         return jsonify({"error": "No se encontraron reservas para este usuario"}), 404
-    
-    
-    return jsonify([reservation.serialize() for reservation in reservations]), 200
 
-@reservation.route("/reservation/<int:id>/view-all-details", methods=["GET"])
+    # Serializar las reservas y sus detalles utilizando el método serialize
+    serialized_reservations = [reservation.serialize() for reservation in reservations]
+
+    return jsonify(serialized_reservations), 200
+
+
+
+
+@reservation.route("/reservation-in-camping/<int:provider_id>/reservations", methods=["GET"])
 @jwt_required()
-def get_reservation_details(id):
-    reservation = Reservation.query.get(id)
-    if not reservation:
-        return jsonify({"error": "Reservation not found"}), 404
+@view_permission_required([2])  # Solo permite a proveedores acceder a sus reservas
+def get_reservations_by_provider(provider_id):
+    try:
+        # Obtener todos los campings que pertenecen al proveedor
+        campings = Camping.query.filter_by(provider_id=provider_id).all()
+        if not campings:
+            return jsonify({"error": "No se encontraron campings para este proveedor"}), 404
 
-    serialized_reservation = reservation.serialize()
-    print("Detalles de la reserva serializada:", serialized_reservation)
-    
-    return jsonify(serialized_reservation), 200
+        # Obtener los IDs de los campings
+        camping_ids = [camping.id for camping in campings]
+
+        # Obtener todas las reservas asociadas a los campings del proveedor usando 'in_'
+        reservations = (
+            Reservation.query
+            .join(Site)
+            .filter(Site.camping_id.in_(camping_ids))
+            .all()
+        )
+
+        if not reservations:
+            return jsonify({"error": "No se encontraron reservas para este proveedor"}), 404
+
+        # Serializar las reservas
+        serialized_reservations = [reservation.serialize() for reservation in reservations]
+        return jsonify(serialized_reservations), 200
+
+    except Exception as e:
+        print(f"Error en get_reservations_by_provider: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
