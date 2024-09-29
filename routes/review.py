@@ -3,6 +3,7 @@ from models import Review
 from datetime import datetime
 from flask import request, jsonify
 from models import db
+from sqlalchemy import func
 
 review = Blueprint("review", __name__ ,url_prefix="/review")
 
@@ -19,7 +20,10 @@ def create_review():
     db.session.commit()
     return jsonify(review.serialize()), 201
 
-@review.route("/review", methods=["GET"])
+
+#Crear endpoint filtrando por Id de camping
+#Investigar query.sum 
+@review.route("/camping/<int:camping_id>/review", methods=["GET"])
 def get_reviews(): 
     reviews = Review.query.all()
     return jsonify([review.serialize() for review in reviews])
@@ -49,4 +53,19 @@ def get_reviews_by_camping(camping_id):
     reviews = Review.query.filter_by(camping_id=camping_id).all()
     if not reviews:
         return jsonify({"error": "No reviews found for this camping"}), 404
-    return jsonify([review.serialize() for review in reviews]), 200
+    
+
+    total_reviews = len(reviews)
+
+    total_rating = db.session.query(func.sum(Review.rating)).filter_by(camping_id=camping_id).scalar() or 0
+
+    average_rating = round(total_rating / total_reviews) if total_reviews > 0 else 0 
+
+    reviews_data = [review.serialize() for review in reviews]
+
+    return jsonify({ 
+        "reviews": reviews_data,
+        "average_rating": average_rating,
+        "total_reviews": total_reviews
+    }), 200
+
