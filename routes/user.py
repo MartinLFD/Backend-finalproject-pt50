@@ -1,19 +1,30 @@
+# user.py
+
 from flask import Blueprint, request, jsonify
 from models import User, db
 from datetime import datetime
 from extensions import bcrypt
 from flask_jwt_extended import (
     create_access_token, 
-    create_refresh_token, 
     jwt_required, 
-    get_jwt_identity
+    get_jwt_identity,
+    set_access_cookies,
+    unset_jwt_cookies
 )
+from auth_utils import role_required
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
-@user.route("/user", methods=["POST"])
+# Crear usuario
+@user.route("/create-one-user", methods=["POST"])
 def create_user():
     data = request.get_json()
+    if not all([data.get("first_name"), data.get("last_name"), data.get("rut"), data.get("email"), data.get("password")]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if User.query.filter_by(email=data["email"]).first():
+        return jsonify({"error": "Email already in use"}), 400
+    
     hashed_password = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
     user = User(
         first_name=data["first_name"],
@@ -29,7 +40,7 @@ def create_user():
     db.session.commit()
     return jsonify(user.serialize()), 201
 
-@user.route("/login", methods=["POST"])
+@user.route("/login-user", methods=["POST"])
 def login():
     data = request.get_json()
     email = data.get("email")
@@ -43,61 +54,61 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
     
     access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
-    
-    return jsonify({
+    user_data = user.serialize()
+
+    response = jsonify({
         "message": "Login successful",
-        "token": access_token,
-        "refresh_token": refresh_token,
-        "user": user.serialize()
-    }), 200
+        "user": user_data,
+        "token": access_token
+    })
+    
+    set_access_cookies(response, access_token)
+    return response, 200
 
-# endpoint para refrescar el token usando refresj token previamente importado
-@user.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)
-def refresh_token():
+# Logout
+@user.route("/logout-user", methods=["POST"])
+@jwt_required()
+def logout():
+    response = jsonify({"message": "Logout successful"})
+    unset_jwt_cookies(response)
+    return response, 200
+
+# Obtener información del usuario autenticado
+@user.route("/get-authenticated-user", methods=["GET"])
+@jwt_required()
+def get_current_user():
     current_user_id = get_jwt_identity()
-    new_token = create_access_token(identity=current_user_id)
-    return jsonify({"token": new_token}), 200
-
-@user.route("/user", methods=["GET"])
-def get_users(): 
-    users = User.query.all()
-    return jsonify([user.serialize() for user in users])
-
-@user.route("/user/<int:id>", methods=["DELETE"])
-def delete_user(id):
-    user = User.query.get(id)
+    user = User.query.get(current_user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({"message": "User deleted"}), 200
+    return jsonify(user.serialize()), 200
 
-@user.route("/user", methods=["PUT"])
+# Actualizar información del usuario (nombres, apellidos)
+@user.route("/update-user-info", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])  # Permitir a usuarios con role_id 2 (Proveedor) y 3 (Cliente)
 def update_user():
     data = request.get_json()
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"error:" "user not found"}), 404
+        return jsonify({"error": "User not found"}), 404
 
     current_password = data.get("current_password")
     if not current_password or not bcrypt.check_password_hash(user.password, current_password):
-        return jsonify({"error": "invalid password"}), 401
+        return jsonify({"error": "Invalid password"}), 401
     
     user.first_name = data.get("first_name", user.first_name)
     user.last_name = data.get("last_name", user.last_name)
-    user.phone = data.get("phone", user.phone)
-
     db.session.commit()
-    return jsonify(user.serialize()),200
+    return jsonify(user.serialize()), 200
 
-@user.route("/update_email", methods=["PUT"])
+# Actualizar correo electrónico
+@user.route("/update-user-email", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_email():
-    data= request.get_json()
+    data = request.get_json()
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
@@ -118,8 +129,10 @@ def update_email():
     db.session.commit()
     return jsonify({"message": "Email updated successfully"}), 200
 
-@user.route("/update_password", methods=["PUT"])
+# Actualizar contraseña
+@user.route("/update-user-password", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_password():
     data = request.get_json()
     current_user_id = get_jwt_identity()
@@ -140,8 +153,10 @@ def update_password():
     db.session.commit()
     return jsonify({"message": "Password updated successfully"}), 200
 
-@user.route("/update_phone", methods=["PUT"])
+# Actualizar teléfono
+@user.route("/update-user-phone", methods=["PUT"])
 @jwt_required()
+@role_required([2, 3])
 def update_phone():
     data = request.get_json()
     current_user_id = get_jwt_identity()

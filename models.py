@@ -76,7 +76,7 @@ class Camping(db.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "provider": self.provider.serialize(),
+            "provider": self.provider.serialize(),  # Información completa del proveedor (usuario)
             "name": self.name,
             "camping_rut": self.camping_rut,
             "razon_social": self.razon_social,
@@ -93,9 +93,9 @@ class Camping(db.Model):
             "main_image": self.main_image,
             "images": self.images,
             "services": self.services,
-            "zones": [zone.serialize() for zone in self.zones],
-            
+            "zones": [zone.serialize() for zone in self.zones],  # Zonas dentro del camping
         }
+
     
 #Table Reservation
 class Reservation(db.Model):
@@ -115,14 +115,12 @@ class Reservation(db.Model):
 
     def serialize(self):
         site = Site.query.get(self.site_id)
-        
-        # para una lista de servicios seleccionados con sus detalles (nombre y precio)
+
         selected_services_details = []
         if self.selected_services:
-            camping = site.camping  # obtenemos el camping asociado al sitio
+            camping = site.camping  # Camping asociado al sitio
             if camping and camping.services:
                 for service_name in self.selected_services:
-                    # para verificar si el servicio existe en los servicios del camping
                     if service_name in camping.services:
                         selected_services_details.append({
                             "name": service_name,
@@ -132,13 +130,13 @@ class Reservation(db.Model):
         return {
             "id": self.id,
             "user": self.user.serialize(),
-            "site_id": self.site_id,
-            "camping_name": self.site.camping.name,  
+            "site": site.serialize(),  # Detalles completos del sitio
+            "camping": site.camping.serialize() if site.camping else None,  # Detalles completos del camping
             "start_date": self.start_date.strftime('%Y-%m-%d'),
             "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
             "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
-            "selected_services": selected_services_details,  # Detalles de servicios seleccionados
+            "selected_services": selected_services_details,
             "total_amount": float(self.total_amount),
         }
     
@@ -187,14 +185,16 @@ class Site(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "camping_id": self.camping_id, 
+            "camping_id": self.camping_id,
             "status": self.status,
             "max_of_people": self.max_of_people,
             "price": self.price,
             "facilities": self.facilities,
             "dimensions": self.dimensions,
-            "review": self.review, 
-            "url_map_site": self.url_map_site, 
-            "url_photo_site": self.url_photo_site, 
-            "camping_services": self.camping.services if self.camping else {}  # Cambiado para evitar errores
+            "review": self.review,
+            "url_map_site": self.url_map_site,
+            "url_photo_site": self.url_photo_site,
+            "camping_name": self.camping.name if self.camping else None,  # Nombre del camping asociado
+            "camping_services": self.camping.services if self.camping else {},  # Servicios del camping
+            "camping_provider": self.camping.provider.serialize() if self.camping else None,  # Información del proveedor
         }

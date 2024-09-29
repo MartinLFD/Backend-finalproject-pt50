@@ -78,7 +78,7 @@ def update_reservation(id):
     db.session.commit()
     return jsonify(reservation.serialize()), 200
 
-@reservation.route("/reservation/<int:id>", methods=["DELETE"])
+@reservation.route("/delete-reservation/<int:id>", methods=["DELETE"])  # Cambié el nombre de la ruta
 @jwt_required()
 def delete_reservation(id):
     data = request.get_json()
@@ -102,6 +102,7 @@ def delete_reservation(id):
     
     return jsonify({"message": "Reservation deleted"}), 200
 
+
 @reservation.route("/user/<int:user_id>/reservations", methods=["GET"])
 @jwt_required()
 def get_reservation_by_user(user_id):
@@ -117,3 +118,15 @@ def get_reservation_by_user(user_id):
     
     
     return jsonify([reservation.serialize() for reservation in reservations]), 200
+
+@reservation.route("/reservation/<int:id>/view-all-details", methods=["GET"])
+@jwt_required()
+def get_reservation_details(id):
+    reservation = Reservation.query.get(id)
+    if not reservation:
+        return jsonify({"error": "Reservation not found"}), 404
+
+    serialized_reservation = reservation.serialize()
+    print("Detalles de la reserva serializada:", serialized_reservation)
+    
+    return jsonify(serialized_reservation), 200
