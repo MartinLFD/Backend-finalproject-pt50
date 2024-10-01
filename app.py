@@ -14,7 +14,7 @@ from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, s
 from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://joaodevc_admin:dP;diDJNtVNy@45.236.165.191/joaodevc_camping_definitive'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:iAZHmHoRwXmjcUSvafpcTTZWyugPdSYq@autorack.proxy.rlwy.net:15974/railway'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "super_secret"  # Cambiar en producción
 app.config["SECRET_KEY"] = "super_super_secret"
