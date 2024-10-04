@@ -16,7 +16,7 @@ reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
 def create_reservation():
     data = request.get_json()
     current_user_id = get_jwt_identity()
-    
+
     site = Site.query.get(data["site_id"])
     if not site:
         return jsonify({"error": "Site not found"}), 404
@@ -32,15 +32,16 @@ def create_reservation():
 
     total_amount = num_nights * site.price
 
+    # Convertir los servicios disponibles a un diccionario para búsqueda rápida
+    available_services = {service['name'].lower(): service['price'] for service in camping.services}
+
     if data.get("selected_services"):
-        if camping and camping.services:
-            for service in data["selected_services"]:
-                if service in camping.services:
-                    total_amount += camping.services[service]
-                else:
-                    return jsonify({"error": f"Service '{service}' not found in camping services"}), 400
-        else:
-            return jsonify({"error": "Camping has no services"}), 400
+        for service_name in data["selected_services"]:
+            service_name_lower = service_name.lower()
+            if service_name_lower in available_services:
+                total_amount += int(available_services[service_name_lower])  # Asegurarse de que el precio sea un número
+            else:
+                return jsonify({"error": f"Service '{service_name}' not found in camping services"}), 400
 
     reservation = Reservation(
         user_id=current_user_id,
@@ -48,14 +49,16 @@ def create_reservation():
         start_date=start_date,
         end_date=end_date,
         number_of_people=data["number_of_people"],
-        selected_services=data.get("selected_services"),
+        selected_services=data.get("selected_services"),  # Guardar solo los nombres de los servicios
         total_amount=total_amount
     )
-    
+
     db.session.add(reservation)
     db.session.commit()
-    
+
     return jsonify(reservation.serialize()), 201
+
+
 
 @reservation.route("/reservation", methods=["GET"])
 @jwt_required()
@@ -114,16 +117,22 @@ def get_reservations_and_details_by_user(user_id):
     if current_user_id != user_id:
         return jsonify({"error": "No autorizado"}), 403
 
-    # Obtener todas las reservas del usuario autenticado con detalles relacionados
-    reservations = Reservation.query.filter_by(user_id=user_id).all()
+    try:
+        # Obtener todas las reservas del usuario autenticado con detalles relacionados
+        reservations = Reservation.query.filter_by(user_id=user_id).all()
+        
+        if not reservations:
+            return jsonify({"error": "No se encontraron reservas para este usuario"}), 404
+
+        # Serializar las reservas y sus detalles utilizando el método serialize
+        serialized_reservations = [reservation.serialize() for reservation in reservations]
+
+        return jsonify(serialized_reservations), 200
     
-    if not reservations:
-        return jsonify({"error": "No se encontraron reservas para este usuario"}), 404
-
-    # Serializar las reservas y sus detalles utilizando el método serialize
-    serialized_reservations = [reservation.serialize() for reservation in reservations]
-
-    return jsonify(serialized_reservations), 200
+    except Exception as e:
+        # Imprimir error ????
+        print(f"Error en get_reservations_and_details_by_user: {str(e)}")
+        return jsonify({"error": "Error interno del servidor", "message": str(e)}), 500
 
 
 

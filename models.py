@@ -76,7 +76,7 @@ class Camping(db.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "provider": self.provider.serialize(),  # Información completa del proveedor (usuario)
+            "provider": self.provider.serialize(),
             "name": self.name,
             "camping_rut": self.camping_rut,
             "razon_social": self.razon_social,
@@ -89,15 +89,16 @@ class Camping(db.Model):
             "url_web": self.url_web,
             "url_google_maps": self.url_google_maps,
             "description": self.description,
-            "rules": self.rules,  # Cambiado a JSON
+            "rules": self.rules,
             "main_image": self.main_image,
             "images": self.images,
-            "services": self.services,
-            "zones": [zone.serialize() for zone in self.zones],  # Zonas dentro del camping
+            "services": self.services if isinstance(self.services, dict) else {},
+            "zones": [zone.serialize() for zone in self.zones],
         }
 
+
     
-#Table Reservation
+# Table Reservation
 class Reservation(db.Model):
     __tablename__ = 'reservation'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -107,7 +108,7 @@ class Reservation(db.Model):
     end_date = db.Column(Date, nullable=False)
     number_of_people = db.Column(db.Integer, nullable=False)
     reservation_date = db.Column(DateTime, default=datetime.now)
-    selected_services = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    selected_services = db.Column(JSON, nullable=True)  # Almacenado como lista JSON
     total_amount = db.Column(DECIMAL(10, 2), nullable=False, default=0)
 
     user = relationship("User")
@@ -116,31 +117,30 @@ class Reservation(db.Model):
     def serialize(self):
         site = Site.query.get(self.site_id)
 
-        selected_services_details = []
+        # Extraer solo los nombres de los servicios seleccionados
+        selected_services_names = []
         if self.selected_services:
-            camping = site.camping  # Camping asociado al sitio
-            if camping and camping.services:
-                for service_name in self.selected_services:
-                    if service_name in camping.services:
-                        selected_services_details.append({
-                            "name": service_name,
-                            "price": camping.services[service_name]
-                        })
+            selected_services_names = self.selected_services  # Simplemente una lista de los nombres
+
+        # Extraer los servicios del camping con nombre y precio (si los servicios están en formato dict)
+        camping_services_with_price = []
+        if site.camping and isinstance(site.camping.services, dict):
+            camping_services_with_price = [{"name": name, "price": price} for name, price in site.camping.services.items()]
 
         return {
             "id": self.id,
             "user": self.user.serialize(),
-            "site": site.serialize(),  # Detalles completos del sitio
-            "camping": site.camping.serialize() if site.camping else None,  # Detalles completos del camping
+            "site": site.serialize(),
+            "camping": site.camping.serialize() if site.camping else None,
             "start_date": self.start_date.strftime('%Y-%m-%d'),
             "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
             "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
-            "selected_services": selected_services_details,
+            "selected_services": selected_services_names,  # Solo nombres de los servicios seleccionados
             "total_amount": float(self.total_amount),
-            "camping_services": list(site.camping.services.keys()) if site.camping and isinstance(site.camping.services, dict) else []  # Asegurar que services sea un array de keys
+            "camping_services_with_price": camping_services_with_price  # Servicios del camping con nombre y precio
         }
-    
+
     
     
 #Table Review
