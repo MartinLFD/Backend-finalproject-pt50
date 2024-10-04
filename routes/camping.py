@@ -10,9 +10,19 @@ from flask_jwt_extended import (
 
 camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
-@camping.route("/", methods=["POST"])
+@camping.route("/create-camping-by-admin", methods=["POST"])
 def create_camping():
     data = request.get_json()
+    print("Datos recibidos:", data)  # Este print te ayudará a ver si todos los campos se están enviando correctamente
+
+    # Validar que se reciban los datos obligatorios
+    required_fields = ["provider_id", "name", "camping_rut", "razon_social", 
+                       "comuna", "region", "phone", "address", "description"]
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return jsonify({"error": f"El campo {field} es obligatorio."}), 400
+
+    # Crear el nuevo camping con los datos recibidos
     camping = Camping(
         provider_id=data["provider_id"],
         name=data["name"],
@@ -20,23 +30,25 @@ def create_camping():
         razon_social=data["razon_social"],
         comuna=data["comuna"],
         region=data["region"],
-        landscape=data.get("landscape"),
-        type=data.get("type"),
         phone=data["phone"],
         address=data["address"],
-        url_web=data.get("url_web"),
+        url_web=data.get("url_web"),  
         url_google_maps=data.get("url_google_maps"),
-        description=data.get("description"),
-        rules=data.get("rules"),
+        description=data["description"],
+        rules=data.get("rules", []),  
         main_image=data.get("main_image"),
-        images=data.get("images"),
-        services=data.get("services")
+        images=data.get("images", []),
+        services=data.get("services", []),
     )
-    
-    db.session.add(camping)
-    db.session.commit()
-    
-    return jsonify(camping.serialize()), 201
+
+    try:
+        db.session.add(camping)
+        db.session.commit()
+        return jsonify(camping.serialize()), 201
+    except Exception as e:
+        print(f"Error al crear el camping: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Error interno al crear el camping"}), 500
 
 
 @camping.route("/", methods=["GET"])
@@ -92,7 +104,7 @@ def update_camping_for_provider(provider_id, camping_id):
         return jsonify({"error": "Camping not found or doesn't belong to the provider"}), 404
 
     data = request.get_json()
-
+    print(f"Main image recibida:{data.get('main_image')}")
     try:
         camping.name = data.get('campingName', camping.name)
         camping.razon_social = data.get('razonSocial', camping.razon_social)
@@ -109,6 +121,7 @@ def update_camping_for_provider(provider_id, camping_id):
         camping.rules = data.get('rules', camping.rules)
         camping.images = data.get('images', camping.images)
         camping.services = data.get('services', camping.services)
+        camping.main_image = data.get('main_image', camping.main_image)  # <-- Aquí se agrega la main_image
 
         db.session.commit()
         return jsonify({"message": "Camping updated successfully"}), 200
@@ -124,4 +137,3 @@ def public_view_get_campings():
         return jsonify([camping.serialize() for camping in campings]), 200
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
-
