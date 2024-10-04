@@ -65,10 +65,10 @@ class Camping(db.Model):
     url_web = db.Column(db.String(255), nullable=True)
     url_google_maps = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    rules = db.Column(JSON, nullable=True)  # Cambiado a JSON
-    main_image = db.Column(JSON, nullable=True)  # Foto principal en JSON
-    images = db.Column(JSON, nullable=True)  # Álbum de imágenes en JSON
-    services = db.Column(JSON, nullable=True)  # Servicios en JSON
+    rules = db.Column(JSON, nullable=True)  
+    main_image = db.Column(JSON, nullable=True)  
+    images = db.Column(JSON, nullable=True)  
+    services = db.Column(JSON, nullable=True)  
     provider = relationship("User")
     zones = relationship("Site", back_populates="camping")
     
@@ -92,7 +92,7 @@ class Camping(db.Model):
             "rules": self.rules,
             "main_image": self.main_image,
             "images": self.images,
-            "services": self.services if isinstance(self.services, dict) else {},
+            "services": self.services if isinstance(self.services, list) else [],
             "zones": [zone.serialize() for zone in self.zones],
         }
 
@@ -126,7 +126,6 @@ class Reservation(db.Model):
         camping_services_with_price = []
         if site.camping and isinstance(site.camping.services, dict):
             camping_services_with_price = [{"name": name, "price": price} for name, price in site.camping.services.items()]
-
         return {
             "id": self.id,
             "user": self.user.serialize(),
@@ -178,9 +177,8 @@ class Site(db.Model):
     facilities = db.Column(JSON, nullable=True)
     dimensions = db.Column(JSON, nullable=True)
     review = db.Column(db.Text, nullable=True)  
-    url_map_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL del mapa del sitio
-    url_photo_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL de la foto del sitio
-    
+    url_map_site = db.Column(db.String(255), nullable=True)  
+    url_photo_site = db.Column(db.String(255), nullable=True)  
     camping = relationship("Camping", back_populates="zones")
 
     def serialize(self):

@@ -75,11 +75,14 @@ def get_camping_before_to_edit(provider_id, camping_id):
             print("Camping not found!")
             return jsonify({"error": "Camping not found"}), 404
         
-        print(f"Camping found: {camping.serialize()}")
+        # Aquí agregamos el console log para verificar el valor de los servicios
+        print(f"Camping services: {camping.services}")
+        
         return jsonify(camping.serialize()), 200
     except Exception as e:
         print(f"Error fetching camping: {e}")
         return jsonify({"error": "Error fetching camping"}), 500
+
 
 
 @camping.route('/provider/<int:provider_id>/edit-camping/<int:camping_id>', methods=['PUT'])
@@ -120,6 +123,5 @@ def public_view_get_campings():
         campings = Camping.query.all()  # Obtén todos los campings
         return jsonify([camping.serialize() for camping in campings]), 200
     except Exception as e:
-        print(f"Error al obtener los campings públicos: {e}")
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
 
