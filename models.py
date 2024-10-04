@@ -65,10 +65,17 @@ class Camping(db.Model):
     url_web = db.Column(db.String(255), nullable=True)
     url_google_maps = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
+<<<<<<< HEAD
     rules = db.Column(JSON, nullable=True)
     main_image = db.Column(JSON, nullable=True)
     images = db.Column(JSON, nullable=True)
     services = db.Column(JSON, nullable=True)
+=======
+    rules = db.Column(JSON, nullable=True)  
+    main_image = db.Column(JSON, nullable=True)  
+    images = db.Column(JSON, nullable=True)  
+    services = db.Column(JSON, nullable=True)  
+>>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
     provider = relationship("User")
     zones = relationship("Site", back_populates="camping")
 
@@ -91,11 +98,19 @@ class Camping(db.Model):
             "rules": self.rules,
             "main_image": self.main_image,
             "images": self.images,
+<<<<<<< HEAD
             "services": self.services,
             "zones": [zone.serialize() for zone in self.zones],
         }
+=======
+            "services": self.services if isinstance(self.services, list) else [],
+            "zones": [zone.serialize() for zone in self.zones],
+        }
+
+
+>>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
     
-#Table Reservation
+# Table Reservation
 class Reservation(db.Model):
     __tablename__ = 'reservation'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -105,7 +120,7 @@ class Reservation(db.Model):
     end_date = db.Column(Date, nullable=False)
     number_of_people = db.Column(db.Integer, nullable=False)
     reservation_date = db.Column(DateTime, default=datetime.now)
-    selected_services = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    selected_services = db.Column(JSON, nullable=True)  # Almacenado como lista JSON
     total_amount = db.Column(DECIMAL(10, 2), nullable=False, default=0)
 
     user = relationship("User")
@@ -114,31 +129,29 @@ class Reservation(db.Model):
     def serialize(self):
         site = Site.query.get(self.site_id)
 
-        selected_services_details = []
+        # Extraer solo los nombres de los servicios seleccionados
+        selected_services_names = []
         if self.selected_services:
-            camping = site.camping  # Camping asociado al sitio
-            if camping and camping.services:
-                for service_name in self.selected_services:
-                    if service_name in camping.services:
-                        selected_services_details.append({
-                            "name": service_name,
-                            "price": camping.services[service_name]
-                        })
+            selected_services_names = self.selected_services  # Simplemente una lista de los nombres
 
+        # Extraer los servicios del camping con nombre y precio (si los servicios están en formato dict)
+        camping_services_with_price = []
+        if site.camping and isinstance(site.camping.services, dict):
+            camping_services_with_price = [{"name": name, "price": price} for name, price in site.camping.services.items()]
         return {
             "id": self.id,
             "user": self.user.serialize(),
-            "site": site.serialize(),  # Detalles completos del sitio
-            "camping": site.camping.serialize() if site.camping else None,  # Detalles completos del camping
+            "site": site.serialize(),
+            "camping": site.camping.serialize() if site.camping else None,
             "start_date": self.start_date.strftime('%Y-%m-%d'),
             "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
             "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
-            "selected_services": selected_services_details,
+            "selected_services": selected_services_names,  # Solo nombres de los servicios seleccionados
             "total_amount": float(self.total_amount),
-            "camping_services": list(site.camping.services.keys()) if site.camping and isinstance(site.camping.services, dict) else []  # Asegurar que services sea un array de keys
+            "camping_services_with_price": camping_services_with_price  # Servicios del camping con nombre y precio
         }
-    
+
     
     
 #Table Review
@@ -176,9 +189,8 @@ class Site(db.Model):
     facilities = db.Column(JSON, nullable=True)
     dimensions = db.Column(JSON, nullable=True)
     review = db.Column(db.Text, nullable=True)  
-    url_map_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL del mapa del sitio
-    url_photo_site = db.Column(db.String(255), nullable=True)  # Campo para almacenar la URL de la foto del sitio
-    
+    url_map_site = db.Column(db.String(255), nullable=True)  
+    url_photo_site = db.Column(db.String(255), nullable=True)  
     camping = relationship("Camping", back_populates="zones")
 
     def serialize(self):
