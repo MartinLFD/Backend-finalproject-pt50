@@ -1,17 +1,9 @@
-from flask import Blueprint
-from models import Camping
-from datetime import datetime
-from flask import request, jsonify
-from models import db
-from auth_utils import view_permission_required
-from flask_jwt_extended import (
-    jwt_required,
-)
+from flask import Blueprint, request, jsonify
+from models import Camping, Site, db
 
-camping = Blueprint("camping", __name__ ,url_prefix="/camping")
+camping = Blueprint("camping", __name__, url_prefix="/camping")
 
 @camping.route("/camping", methods=["POST"])
-
 def create_camping():
     data = request.get_json()
     camping = Camping(
@@ -39,12 +31,10 @@ def create_camping():
     
     return jsonify(camping.serialize()), 201
 
-
 @camping.route("/camping", methods=["GET"])
-def get_campings(): 
+def get_campings():
     campings = Camping.query.all()
     return jsonify([camping.serialize() for camping in campings])
-
 
 @camping.route("/camping/<int:id>", methods=["DELETE"])
 def delete_camping(id):
@@ -56,8 +46,6 @@ def delete_camping(id):
     return jsonify({"message": "Camping deleted"}), 200
 
 @camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
-@jwt_required()  # Verifica que el usuario esté autenticado
-@view_permission_required([2])  # Permite solo a usuarios con role_id 2 (Proveedor)
 def get_campings_by_provider(provider_id):
     campings = Camping.query.filter_by(provider_id=provider_id).all()
     if not campings:
@@ -82,14 +70,12 @@ def get_camping(id):
         "url_google_maps": camping.google_maps
     })
 
-# Endpoint PUT para editar un camping
 @camping.route('/camping/<int:id>', methods=['PUT'])
 def update_camping(id):
     camping = Camping.query.get(id)
     if not camping:
         return jsonify({"error": "Camping not found"}), 404
 
-    # Obtener los datos enviados en el cuerpo de la solicitud
     data = request.get_json()
 
     try:
@@ -110,3 +96,19 @@ def update_camping(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Error updating camping: {str(e)}"}), 500
+
+@camping.route("/search", methods=["POST"])
+def search_campings():
+    data = request.get_json()
+    lugar = data.get("lugar")
+    num_personas = data.get("numPersonas")
+    tipo = data.get("tipo")
+
+    query = db.session.query(Camping).join(Site).filter(
+        Camping.type == tipo, 
+        (Camping.region.contains(lugar) | Camping.comuna.contains(lugar)),
+        Site.max_of_people >= num_personas
+    )
+
+    results = [camping.serialize() for camping in query.all()]
+    return jsonify(results)

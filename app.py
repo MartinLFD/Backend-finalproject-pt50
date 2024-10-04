@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, after_this_request
+from flask import Flask, after_this_request, request, jsonify
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -10,6 +10,8 @@ from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, set_access_cookies
+from models import Camping, Site  # Asegurarse de que los modelos están importados
+from sqlalchemy import or_
 
 from datetime import datetime, timedelta, timezone
 
@@ -33,8 +35,6 @@ Migrate(app, db)
 
 # Configurar CORS con soporte para credenciales
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
-
-
 
 # Middleware para renovar el token automáticamente si está a punto de expirar
 @app.after_request
@@ -73,6 +73,41 @@ app.register_blueprint(camping)
 app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
+
+# ------------------------------------
+# BUSQUEDA DE CAMPINGS (NUEVA RUTA)
+# ------------------------------------
+@app.route('/api/campings/search', methods=['GET'])
+def search_campings():
+    lugar = request.args.get('lugar', '')
+    num_personas = request.args.get('numPersonas', None)
+    tipo = request.args.get('tipo', '')
+
+    # Consulta base para buscar campings
+    query = db.session.query(Camping)
+
+    # Filtros de lugar (comuna o región)
+    if lugar:
+        lugar_filter = or_(
+            Camping.comuna.ilike(f"%{lugar}%"),
+            Camping.region.ilike(f"%{lugar}%")
+        )
+        query = query.filter(lugar_filter)
+
+    # Filtro de tipo de camping
+    if tipo:
+        query = query.filter(Camping.type.ilike(f"%{tipo}%"))
+
+    # Filtro por número de personas (filtrando sitios con capacidad suficiente)
+    if num_personas:
+        query = query.join(Site).filter(Site.max_of_people >= num_personas)
+
+    # Obtener los resultados
+    campings = query.all()
+
+    # Serializar los resultados
+    results = [camping.serialize() for camping in campings]
+    return jsonify(results), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)

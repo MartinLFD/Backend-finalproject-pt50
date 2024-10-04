@@ -47,8 +47,8 @@ class User(db.Model):
             "registration_date": self.registration_date
         }
 
-# Table Camping 
 
+# Table Camping 
 class Camping(db.Model):
     __tablename__ = 'camping'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -58,25 +58,24 @@ class Camping(db.Model):
     razon_social = db.Column(db.String(100), nullable=False)
     comuna = db.Column(db.String(50), nullable=False)
     region = db.Column(db.String(50), nullable=False)
-    landscape = db.Column(db.String(200), nullable = True)
-    type = db.Column(db.String(200), nullable = True)
+    landscape = db.Column(db.String(200), nullable=True)
+    type = db.Column(db.String(200), nullable=True)
     phone = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(255), nullable=False)
     url_web = db.Column(db.String(255), nullable=True)
     url_google_maps = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    rules = db.Column(JSON, nullable=True)  # Cambiado a JSON
-    main_image = db.Column(JSON, nullable=True)  # Foto principal en JSON
-    images = db.Column(JSON, nullable=True)  # Álbum de imágenes en JSON
-    services = db.Column(JSON, nullable=True)  # Servicios en JSON
+    rules = db.Column(JSON, nullable=True)
+    main_image = db.Column(JSON, nullable=True)
+    images = db.Column(JSON, nullable=True)
+    services = db.Column(JSON, nullable=True)
     provider = relationship("User")
     zones = relationship("Site", back_populates="camping")
-    
 
     def serialize(self):
         return {
             "id": self.id,
-            "provider": self.provider.serialize(),  # Información completa del proveedor (usuario)
+            "provider": self.provider.serialize(),
             "name": self.name,
             "camping_rut": self.camping_rut,
             "razon_social": self.razon_social,
@@ -89,13 +88,12 @@ class Camping(db.Model):
             "url_web": self.url_web,
             "url_google_maps": self.url_google_maps,
             "description": self.description,
-            "rules": self.rules,  # Cambiado a JSON
+            "rules": self.rules,
             "main_image": self.main_image,
             "images": self.images,
             "services": self.services,
-            "zones": [zone.serialize() for zone in self.zones],  # Zonas dentro del camping
+            "zones": [zone.serialize() for zone in self.zones],
         }
-
     
 #Table Reservation
 class Reservation(db.Model):
