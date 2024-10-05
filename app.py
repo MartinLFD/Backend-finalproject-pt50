@@ -1,9 +1,5 @@
 # app.py
-<<<<<<< HEAD
-from flask import Flask, after_this_request, request, jsonify
-=======
-from flask import Flask
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
+from flask import Flask, jsonify, request  # Importa request y jsonify
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -14,15 +10,7 @@ from routes.camping import camping
 from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
-<<<<<<< HEAD
-from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, set_access_cookies
-from models import Camping, Site  # Asegurarse de que los modelos están importados
-from sqlalchemy import or_
-
-from datetime import datetime, timedelta, timezone
-=======
 from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 
 app = Flask(__name__)
 
@@ -47,11 +35,7 @@ Migrate(app, db)
 # Configurar CORS con soporte para credenciales
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
-<<<<<<< HEAD
-# Middleware para renovar el token automáticamente si está a punto de expirar
-=======
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 @app.after_request
 def refresh_expiring_jwts(response):
     try:
@@ -64,7 +48,6 @@ def refresh_expiring_jwts(response):
         return response
     except (RuntimeError, KeyError):
         return response
-
 
 # Home
 @app.route("/", methods=["GET"])
@@ -82,40 +65,40 @@ app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
 
-# ------------------------------------
-# BUSQUEDA DE CAMPINGS (NUEVA RUTA)
-# ------------------------------------
-@app.route('/api/campings/search', methods=['GET'])
-def search_campings():
-    lugar = request.args.get('lugar', '')
-    num_personas = request.args.get('numPersonas', None)
-    tipo = request.args.get('tipo', '')
+#NUEVO # Ruta para búsqueda de sitios MOTOR DE BUSQUEDA
 
-    # Consulta base para buscar campings
-    query = db.session.query(Camping)
+@app.route("/search", methods=["GET"])
+def search_sites():
+    # Parámetros de búsqueda de la consulta
+    region = request.args.get("region")
+    comuna = request.args.get("comuna")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    number_of_people = request.args.get("number_of_people", type=int)
+    site_type = request.args.get("type")
 
-    # Filtros de lugar (comuna o región)
-    if lugar:
-        lugar_filter = or_(
-            Camping.comuna.ilike(f"%{lugar}%"),
-            Camping.region.ilike(f"%{lugar}%")
-        )
-        query = query.filter(lugar_filter)
+    # Filtrar los sitios según los parámetros proporcionados
+    query = Site.query.join(Camping).filter(Camping.region == region)
 
-    # Filtro de tipo de camping
-    if tipo:
-        query = query.filter(Camping.type.ilike(f"%{tipo}%"))
+    if comuna:
+        query = query.filter(Camping.comuna == comuna)
+    if start_date and end_date:
+        # Lógica para filtrar según la disponibilidad del sitio
+        reservations = Reservation.query.filter(
+            (Reservation.start_date < end_date) & 
+            (Reservation.end_date > start_date)
+        ).all()
+        reserved_site_ids = [reservation.site_id for reservation in reservations]
+        query = query.filter(Site.id.notin_(reserved_site_ids))
 
-    # Filtro por número de personas (filtrando sitios con capacidad suficiente)
-    if num_personas:
-        query = query.join(Site).filter(Site.max_of_people >= num_personas)
+    if number_of_people:
+        query = query.filter(Site.max_of_people >= number_of_people)
+    if site_type:
+        query = query.filter(Camping.type == site_type)
 
-    # Obtener los resultados
-    campings = query.all()
+    sites = query.all()
 
-    # Serializar los resultados
-    results = [camping.serialize() for camping in campings]
-    return jsonify(results), 200
+    return jsonify([site.serialize() for site in sites]), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)

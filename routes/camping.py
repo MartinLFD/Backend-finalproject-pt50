@@ -1,13 +1,16 @@
-from flask import Blueprint, request, jsonify
-from models import Camping, Site, db
+from flask import Blueprint
+from models import Camping
+from datetime import datetime
+from flask import request, jsonify
+from models import db
+from auth_utils import view_permission_required
+from flask_jwt_extended import (
+    jwt_required,
+)
 
-camping = Blueprint("camping", __name__, url_prefix="/camping")
+camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
-<<<<<<< HEAD
-@camping.route("/camping", methods=["POST"])
-=======
 @camping.route("/create-camping-by-admin", methods=["POST"])
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 def create_camping():
     data = request.get_json()
     print("Datos recibidos:", data)  # Este print te ayudará a ver si todos los campos se están enviando correctamente
@@ -47,14 +50,6 @@ def create_camping():
         db.session.rollback()
         return jsonify({"error": "Error interno al crear el camping"}), 500
 
-<<<<<<< HEAD
-@camping.route("/camping", methods=["GET"])
-def get_campings():
-    campings = Camping.query.all()
-    return jsonify([camping.serialize() for camping in campings])
-
-@camping.route("/camping/<int:id>", methods=["DELETE"])
-=======
 
 @camping.route("/", methods=["GET"])
 def get_campings(): 
@@ -63,7 +58,6 @@ def get_campings():
 
 
 @camping.route("/<int:id>", methods=["DELETE"])
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 def delete_camping(id):
     camping = Camping.query.get(id)
     if not camping:
@@ -74,11 +68,8 @@ def delete_camping(id):
 
 
 @camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
-<<<<<<< HEAD
-=======
 @jwt_required()
 @view_permission_required([2])
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 def get_campings_by_provider(provider_id):
     campings = Camping.query.filter_by(provider_id=provider_id).all()
     if not campings:
@@ -86,13 +77,6 @@ def get_campings_by_provider(provider_id):
     return jsonify([camping.serialize() for camping in campings]), 200
 
 
-<<<<<<< HEAD
-@camping.route('/camping/<int:id>', methods=['PUT'])
-def update_camping(id):
-    camping = Camping.query.get(id)
-    if not camping:
-        return jsonify({"error": "Camping not found"}), 404
-=======
 @camping.route("/provider/<int:provider_id>/camping/<int:camping_id>", methods=["GET"])
 def get_camping_before_to_edit(provider_id, camping_id):
     print(f"Fetching camping with provider_id: {provider_id}, camping_id: {camping_id}")
@@ -118,7 +102,6 @@ def update_camping_for_provider(provider_id, camping_id):
     camping = Camping.query.filter_by(id=camping_id, provider_id=provider_id).first()
     if not camping:
         return jsonify({"error": "Camping not found or doesn't belong to the provider"}), 404
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
 
     data = request.get_json()
     print(f"Main image recibida:{data.get('main_image')}")
@@ -147,23 +130,6 @@ def update_camping_for_provider(provider_id, camping_id):
         db.session.rollback()
         return jsonify({"error": f"Error updating camping: {str(e)}"}), 500
 
-<<<<<<< HEAD
-@camping.route("/search", methods=["POST"])
-def search_campings():
-    data = request.get_json()
-    lugar = data.get("lugar")
-    num_personas = data.get("numPersonas")
-    tipo = data.get("tipo")
-
-    query = db.session.query(Camping).join(Site).filter(
-        Camping.type == tipo, 
-        (Camping.region.contains(lugar) | Camping.comuna.contains(lugar)),
-        Site.max_of_people >= num_personas
-    )
-
-    results = [camping.serialize() for camping in query.all()]
-    return jsonify(results)
-=======
 @camping.route("/public-view-get-campings", methods=["GET"])
 def public_view_get_campings():
     try:
@@ -171,4 +137,3 @@ def public_view_get_campings():
         return jsonify([camping.serialize() for camping in campings]), 200
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
->>>>>>> 90087e1383bb9a17c3d4a95494177aa1f30b8e3d
