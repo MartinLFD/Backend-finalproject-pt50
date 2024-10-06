@@ -173,10 +173,10 @@ class Review(db.Model):
 class Site(db.Model): 
     __tablename__ = 'site' 
     
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Corregido aquí
     name = db.Column(db.String(100), nullable=False)
     camping_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
-    site_type = db.Column(db.String(50), nullable=False) # se agrega esta columna para definir si el sitio es para Camping, Glamping o Camper/Motorhome.
+    site_type = db.Column(db.String(50), nullable=False)  # se agrega esta columna para definir si el sitio es para Camping, Glamping o Camper/Motorhome.
     status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
     max_of_people = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, default=10000)
@@ -192,7 +192,7 @@ class Site(db.Model):
             "id": self.id,
             "name": self.name,
             "camping_id": self.camping_id,
-            "site_type": self.site_type, # se agrega el campo tipo.
+            "site_type": self.site_type,  # se agrega el campo tipo.
             "status": self.status,
             "max_of_people": self.max_of_people,
             "price": self.price,
@@ -201,7 +201,5 @@ class Site(db.Model):
             "review": self.review,
             "url_map_site": self.url_map_site,
             "url_photo_site": self.url_photo_site,
-            "camping_name": self.camping.name if self.camping else None,  # Nombre del camping asociado
-            "camping_services": self.camping.services if self.camping else {},  # Servicios del camping
-            "camping_provider": self.camping.provider.serialize() if self.camping else None,  # Información del proveedor
+            "camping": self.camping.serialize() if self.camping else None,
         }

@@ -1,18 +1,28 @@
 # app.py
-from flask import Flask, jsonify, request  # Importa request y jsonify
+from flask import Flask, jsonify, request  # Importación de jsonify y request para la nueva ruta
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
+from sqlalchemy import or_
 from routes.role import role
 from routes.user import user
 from routes.camping import camping
 from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
-from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
+from models import Site, Camping, Reservation 
+from flask_jwt_extended import get_jwt  # evita el loops de peticiones de la funcion  get_jwt 
+from flask_jwt_extended import JWTManager
+
 
 app = Flask(__name__)
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Configura la clave secreta
+jwt = JWTManager(app)
+
+
+# Configuración básica de CORS
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})  # Permite CORS para el frontend
 
 # Configuraciones
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:iAZHmHoRwXmjcUSvafpcTTZWyugPdSYq@autorack.proxy.rlwy.net:15974/railway'
@@ -65,8 +75,7 @@ app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
 
-#NUEVO # Ruta para búsqueda de sitios MOTOR DE BUSQUEDA
-
+# NUEVO: Ruta para búsqueda de sitios
 @app.route("/search", methods=["GET"])
 def search_sites():
     # Parámetros de búsqueda de la consulta
@@ -77,25 +86,35 @@ def search_sites():
     number_of_people = request.args.get("number_of_people", type=int)
     site_type = request.args.get("type")
 
-    # Filtrar los sitios según los parámetros proporcionados
+## MOTOR DE BUSQUEDA USANDO JOIN
+
+    # Filtrar los sitios según los parámetros 
     query = Site.query.join(Camping).filter(Camping.region == region)
 
     if comuna:
         query = query.filter(Camping.comuna == comuna)
+
     if start_date and end_date:
-        # Lógica para filtrar según la disponibilidad del sitio
-        reservations = Reservation.query.filter(
-            (Reservation.start_date < end_date) & 
-            (Reservation.end_date > start_date)
-        ).all()
-        reserved_site_ids = [reservation.site_id for reservation in reservations]
-        query = query.filter(Site.id.notin_(reserved_site_ids))
+        # Convertir las fechas de cadena a formato de fecha datetime
+        start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
 
-    if number_of_people:
-        query = query.filter(Site.max_of_people >= number_of_people)
+        # Filtrar sitios disponibles usando un outerjoin con Reservation
+        query = query.outerjoin(Reservation).filter(
+            or_(
+                Reservation.start_date > end_date_dt,
+                Reservation.end_date < start_date_dt,
+                Reservation.id.is_(None)  # Para incluir sitios sin reservas
+            )
+        )
+
+    if number_of_people is not None:
+        query = query.filter(Site.max_of_people >= number_of_people, Site.status == 'available')
+        
     if site_type:
-        query = query.filter(Camping.type == site_type)
+        query = query.filter(Site.site_type == site_type)
 
+    # Ejecutar la consulta y devolver los resultados
     sites = query.all()
 
     return jsonify([site.serialize() for site in sites]), 200
