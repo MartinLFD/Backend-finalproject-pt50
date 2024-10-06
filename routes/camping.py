@@ -1,9 +1,14 @@
-from flask import Blueprint, request, jsonify
-from models import Camping, Site, db
+from flask import Blueprint
+from models import Camping
+from datetime import datetime
+from flask import request, jsonify
+from models import db
 from auth_utils import view_permission_required
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import (
+    jwt_required,
+)
 
-camping = Blueprint("camping", __name__, url_prefix="/camping")
+camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
 @camping.route("/create-camping-by-admin", methods=["POST"])
 def create_camping():
@@ -18,7 +23,7 @@ def create_camping():
             return jsonify({"error": f"El campo {field} es obligatorio."}), 400
 
     # Crear el nuevo camping con los datos recibidos
-    new_camping = Camping(
+    camping = Camping(
         provider_id=data["provider_id"],
         name=data["name"],
         camping_rut=data["camping_rut"],
@@ -37,9 +42,9 @@ def create_camping():
     )
 
     try:
-        db.session.add(new_camping)
+        db.session.add(camping)
         db.session.commit()
-        return jsonify(new_camping.serialize()), 201
+        return jsonify(camping.serialize()), 201
     except Exception as e:
         print(f"Error al crear el camping: {e}")
         db.session.rollback()
@@ -91,6 +96,7 @@ def get_camping_before_to_edit(provider_id, camping_id):
         return jsonify({"error": "Error fetching camping"}), 500
 
 
+
 @camping.route('/provider/<int:provider_id>/edit-camping/<int:camping_id>', methods=['PUT'])
 def update_camping_for_provider(provider_id, camping_id):
     camping = Camping.query.filter_by(id=camping_id, provider_id=provider_id).first()
@@ -131,24 +137,3 @@ def public_view_get_campings():
         return jsonify([camping.serialize() for camping in campings]), 200
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
-
-@camping.route("/search", methods=["GET"])
-def search_campings():
-    # Parámetros de búsqueda de la consulta
-    region = request.args.get("region")
-    comuna = request.args.get("comuna")
-    number_of_people = request.args.get("number_of_people", type=int)
-    site_type = request.args.get("type")
-
-    # Realizar el JOIN con la tabla Site
-    query = Camping.query.join(Site).filter(Camping.region == region)
-
-    if comuna:
-        query = query.filter(Camping.comuna == comuna)
-    if number_of_people:
-        query = query.filter(Site.max_of_people >= number_of_people, Site.status == 'available')
-    if site_type:
-        query = query.filter(Site.site_type == site_type)
-
-    campings = query.all()
-    return jsonify([camping.serialize() for camping in campings]), 200

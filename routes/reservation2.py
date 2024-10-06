@@ -7,8 +7,6 @@ from extensions import bcrypt
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth_utils import view_permission_required
 
-
-
 reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
 
 @reservation.route("/reservation", methods=["POST"])
@@ -57,7 +55,6 @@ def create_reservation():
     db.session.commit()
 
     return jsonify(reservation.serialize()), 201
-
 
 
 @reservation.route("/reservation", methods=["GET"])
@@ -130,11 +127,9 @@ def get_reservations_and_details_by_user(user_id):
         return jsonify(serialized_reservations), 200
     
     except Exception as e:
-        # Imprimir error ????
+        # Imprimir error
         print(f"Error en get_reservations_and_details_by_user: {str(e)}")
         return jsonify({"error": "Error interno del servidor", "message": str(e)}), 500
-
-
 
 
 @reservation.route("/reservation-in-camping/<int:provider_id>/reservations", methods=["GET"])
@@ -168,3 +163,26 @@ def get_reservations_by_provider(provider_id):
     except Exception as e:
         print(f"Error en get_reservations_by_provider: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+
+
+# Nueva ruta de búsqueda de reservas con JOIN y filtrado
+@reservation.route("/search", methods=["GET"])
+@jwt_required()
+def search_reservations():
+    user_id = get_jwt_identity()
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    camping_id = request.args.get("camping_id")
+
+    query = Reservation.query.filter_by(user_id=user_id)
+
+    if start_date:
+        query = query.filter(Reservation.start_date >= datetime.strptime(start_date, '%Y-%m-%d'))
+    if end_date:
+        query = query.filter(Reservation.end_date <= datetime.strptime(end_date, '%Y-%m-%d'))
+    if camping_id:
+        query = query.join(Site).filter(Site.camping_id == camping_id)
+
+    reservations = query.all()
+
+    return jsonify([reservation.serialize() for reservation in reservations]), 200

@@ -4,15 +4,13 @@ from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import or_
 from routes.role import role
 from routes.user import user
 from routes.camping import camping
 from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
-from models import Site, Camping, Reservation 
-from flask_jwt_extended import get_jwt  # evita el loops de peticiones de la funcion  get_jwt 
+from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
 from flask_jwt_extended import JWTManager
 
 
@@ -75,6 +73,8 @@ app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
 
+
+#------------------------------------------
 # NUEVO: Ruta para búsqueda de sitios
 @app.route("/search", methods=["GET"])
 def search_sites():
@@ -118,6 +118,9 @@ def search_sites():
     sites = query.all()
 
     return jsonify([site.serialize() for site in sites]), 200
+
+# fin elemento de busqueda
+#---------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)
