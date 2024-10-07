@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, jsonify, request  # Importación de jsonify y request para la nueva ruta
+from flask import Flask
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -11,16 +11,11 @@ from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
 from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
-from flask_jwt_extended import JWTManager
-
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Configura la clave secreta
-jwt = JWTManager(app)
 
-
-# Configuración básica de CORS
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})  # Permite CORS para el frontend
+# Configuración CORS con soporte para credenciales
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 # Configuraciones
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:iAZHmHoRwXmjcUSvafpcTTZWyugPdSYq@autorack.proxy.rlwy.net:15974/railway'
@@ -39,9 +34,6 @@ db.init_app(app)
 bcrypt.init_app(app)
 jwt.init_app(app)
 Migrate(app, db)
-
-# Configurar CORS con soporte para credenciales
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request
@@ -72,55 +64,6 @@ app.register_blueprint(camping)
 app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
-
-
-#------------------------------------------
-# NUEVO: Ruta para búsqueda de sitios
-@app.route("/search", methods=["GET"])
-def search_sites():
-    # Parámetros de búsqueda de la consulta
-    region = request.args.get("region")
-    comuna = request.args.get("comuna")
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-    number_of_people = request.args.get("number_of_people", type=int)
-    site_type = request.args.get("type")
-
-## MOTOR DE BUSQUEDA USANDO JOIN
-
-    # Filtrar los sitios según los parámetros 
-    query = Site.query.join(Camping).filter(Camping.region == region)
-
-    if comuna:
-        query = query.filter(Camping.comuna == comuna)
-
-    if start_date and end_date:
-        # Convertir las fechas de cadena a formato de fecha datetime
-        start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
-
-        # Filtrar sitios disponibles usando un outerjoin con Reservation
-        query = query.outerjoin(Reservation).filter(
-            or_(
-                Reservation.start_date > end_date_dt,
-                Reservation.end_date < start_date_dt,
-                Reservation.id.is_(None)  # Para incluir sitios sin reservas
-            )
-        )
-
-    if number_of_people is not None:
-        query = query.filter(Site.max_of_people >= number_of_people, Site.status == 'available')
-        
-    if site_type:
-        query = query.filter(Site.site_type == site_type)
-
-    # Ejecutar la consulta y devolver los resultados
-    sites = query.all()
-
-    return jsonify([site.serialize() for site in sites]), 200
-
-# fin elemento de busqueda
-#---------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)
