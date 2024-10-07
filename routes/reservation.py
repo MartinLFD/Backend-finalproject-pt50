@@ -168,3 +168,22 @@ def get_reservations_by_provider(provider_id):
     except Exception as e:
         print(f"Error en get_reservations_by_provider: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+
+#obtener sitios con fechas ocupadas :
+@reservation.route("/get-unavailable-dates/<int:site_id>", methods=["GET"])
+def get_unavailable_dates(site_id):
+    try:
+        reservations = Reservation.query.filter_by(site_id=site_id).all()
+
+        unavailable_dates = []
+        for reservation in reservations:
+            # Para cada reserva, agregar las fechas ocupadas al arreglo
+            unavailable_dates.append({
+                "start_date": reservation.start_date.strftime('%Y-%m-%d'),
+                "end_date": reservation.end_date.strftime('%Y-%m-%d')
+            })
+
+        return jsonify({"unavailable_dates": unavailable_dates}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
