@@ -137,3 +137,15 @@ def public_view_get_campings():
         return jsonify([camping.serialize() for camping in campings]), 200
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
+    
+@camping.route("/camping/<int:camping_id>", methods=["GET"]) #GET para traer información de cada camping
+def get_public_view_by_camping_id(camping_id):
+    try: 
+        camping = Camping.query.filter_by(id=camping_id).first()
+        if not camping:
+            print("Camping not found!")
+            return jsonify({"error": "Camping not found"}), 404
+        return jsonify(camping.serialize()), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Error al obtener data de camping_id"}), 500
