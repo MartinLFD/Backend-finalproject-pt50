@@ -1,15 +1,16 @@
-from flask import Blueprint, request, jsonify
-from models import Camping, Site, Reservation
+from flask import Blueprint
+from models import Camping
 from datetime import datetime
+from flask import request, jsonify
 from models import db
 from auth_utils import view_permission_required
-from flask_jwt_extended import jwt_required
-from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import (
+    jwt_required,
+)
 
-# Cambiar el nombre del blueprint para evitar conflicto
-camping_blueprint = Blueprint("camping_blueprint", __name__, url_prefix="/camping")
+camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
-@camping_blueprint.route("/create-camping-by-admin", methods=["POST"])
+@camping.route("/create-camping-by-admin", methods=["POST"])
 def create_camping():
     data = request.get_json()
     print("Datos recibidos:", data)  # Este print te ayudará a ver si todos los campos se están enviando correctamente
@@ -50,13 +51,13 @@ def create_camping():
         return jsonify({"error": "Error interno al crear el camping"}), 500
 
 
-@camping_blueprint.route("/", methods=["GET"])
+@camping.route("/", methods=["GET"])
 def get_campings(): 
     campings = Camping.query.all()
     return jsonify([camping.serialize() for camping in campings])
 
 
-@camping_blueprint.route("/<int:id>", methods=["DELETE"])
+@camping.route("/<int:id>", methods=["DELETE"])
 def delete_camping(id):
     camping = Camping.query.get(id)
     if not camping:
@@ -66,7 +67,7 @@ def delete_camping(id):
     return jsonify({"message": "Camping deleted"}), 200
 
 
-@camping_blueprint.route("/provider/<int:provider_id>/campings", methods=["GET"])
+@camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
 @jwt_required()
 @view_permission_required([2])
 def get_campings_by_provider(provider_id):
@@ -76,7 +77,7 @@ def get_campings_by_provider(provider_id):
     return jsonify([camping.serialize() for camping in campings]), 200
 
 
-@camping_blueprint.route("/provider/<int:provider_id>/camping/<int:camping_id>", methods=["GET"])
+@camping.route("/provider/<int:provider_id>/camping/<int:camping_id>", methods=["GET"])
 def get_camping_before_to_edit(provider_id, camping_id):
     print(f"Fetching camping with provider_id: {provider_id}, camping_id: {camping_id}")
 
@@ -95,14 +96,15 @@ def get_camping_before_to_edit(provider_id, camping_id):
         return jsonify({"error": "Error fetching camping"}), 500
 
 
-@camping_blueprint.route('/provider/<int:provider_id>/edit-camping/<int:camping_id>', methods=['PUT'])
+
+@camping.route('/provider/<int:provider_id>/edit-camping/<int:camping_id>', methods=['PUT'])
 def update_camping_for_provider(provider_id, camping_id):
     camping = Camping.query.filter_by(id=camping_id, provider_id=provider_id).first()
     if not camping:
         return jsonify({"error": "Camping not found or doesn't belong to the provider"}), 404
 
     data = request.get_json()
-    print(f"Main image recibida: {data.get('main_image')}")
+    print(f"Main image recibida:{data.get('main_image')}")
     try:
         camping.name = data.get('campingName', camping.name)
         camping.razon_social = data.get('razonSocial', camping.razon_social)
@@ -128,7 +130,7 @@ def update_camping_for_provider(provider_id, camping_id):
         db.session.rollback()
         return jsonify({"error": f"Error updating camping: {str(e)}"}), 500
 
-@camping_blueprint.route("/public-view-get-campings", methods=["GET"])
+@camping.route("/public-view-get-campings", methods=["GET"])
 def public_view_get_campings():
     try:
         campings = Camping.query.all()  # Obtén todos los campings
@@ -136,7 +138,7 @@ def public_view_get_campings():
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
     
-@camping_blueprint.route("/camping/<int:camping_id>", methods=["GET"])  # GET para traer información de cada camping
+@camping.route("/camping/<int:camping_id>", methods=["GET"]) #GET para traer información de cada camping
 def get_public_view_by_camping_id(camping_id):
     try: 
         camping = Camping.query.filter_by(id=camping_id).first()
@@ -147,61 +149,3 @@ def get_public_view_by_camping_id(camping_id):
     except Exception as e:
         print(e)
         return jsonify({"error": "Error al obtener data de camping_id"}), 500
-
-# Ruta de búsqueda usando JOIN para mostrar campings con sitios disponibles
-@camping_blueprint.route("/search", methods=["POST"])
-def search_campings():
-    data = request.get_json()
-    destination = data.get('destination')
-    num_people = data.get('num_people')
-    check_in = data.get('check_in')
-    check_out = data.get('check_out')
-
-    # Convertir fechas de entrada y salida a objetos datetime
-    check_in_date = datetime.strptime(check_in, '%Y-%m-%d') if check_in else None
-    check_out_date = datetime.strptime(check_out, '%Y-%m-%d') if check_out else None
-
-    # Imprimir las variables para ver los datos recibidos
-    print(f"Datos recibidos: {data}")
-    print(f"Destino: {destination}, Número de personas: {num_people}")
-    print(f"Check-in date: {check_in_date}, Check-out date: {check_out_date}")
-
-    try:
-        query = db.session.query(Camping).join(Site).outerjoin(Reservation).filter(
-            (Camping.region == destination) | (Camping.comuna == destination) if destination else True,
-            Site.max_of_people >= num_people if num_people else True,
-            (Reservation.end_date <= check_in_date) | (Reservation.end_date.is_(None)) if check_in_date else True,
-            (Reservation.start_date >= check_out_date) | (Reservation.start_date.is_(None)) if check_out_date else True,
-            Site.status == 'available'
-        ).group_by(Camping.id).all()
-
-        # Imprimir la consulta generada para depuración
-        print(f"Consulta generada: {query}")
-
-        result = []
-        for camping in query:
-            available_sites = [
-                site for site in camping.sites
-                if site.status == 'available'
-                and site.max_of_people >= num_people
-            ]
-            # Imprimir los sitios disponibles por camping
-            print(f"Camping ID: {camping.id}, Sitios disponibles: {len(available_sites)}")
-
-            result.append({
-                "camping_id": camping.id,
-                "camping_name": camping.name,
-                "region": camping.region,
-                "comuna": camping.comuna,
-                "available_sites_count": len(available_sites),
-            })
-
-        # Imprimir el resultado antes de devolverlo
-        print(f"Resultado: {result}")
-
-        return jsonify(result), 200
-
-    except SQLAlchemyError as e:
-        print(f"Error en la búsqueda de campings: {str(e)}")
-        return jsonify({"error": "Error en la búsqueda de campings"}), 500
-

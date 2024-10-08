@@ -7,8 +7,6 @@ from extensions import bcrypt
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth_utils import view_permission_required
 
-
-
 reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
 
 @reservation.route("/reservation", methods=["POST"])
@@ -58,8 +56,6 @@ def create_reservation():
 
     return jsonify(reservation.serialize()), 201
 
-
-
 @reservation.route("/reservation", methods=["GET"])
 @jwt_required()
 def get_reservation_for_user():
@@ -108,7 +104,6 @@ def delete_reservation(id):
     
     return jsonify({"message": "Reservation deleted"}), 200
 
-
 @reservation.route("/view-reservations-customer/<int:user_id>/all-details", methods=["GET"])
 @jwt_required()
 @view_permission_required([3])  # Solo permite a clientes acceder a sus reservas
@@ -133,9 +128,6 @@ def get_reservations_and_details_by_user(user_id):
         # Imprimir error ????
         print(f"Error en get_reservations_and_details_by_user: {str(e)}")
         return jsonify({"error": "Error interno del servidor", "message": str(e)}), 500
-
-
-
 
 @reservation.route("/reservation-in-camping/<int:provider_id>/reservations", methods=["GET"])
 @jwt_required()
@@ -168,3 +160,23 @@ def get_reservations_by_provider(provider_id):
     except Exception as e:
         print(f"Error en get_reservations_by_provider: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+    
+##____________________________________________________MOTOR DE BUSQUEDA________________________________
+# Ruta para verificar disponibilidad de un sitio específico
+@reservation.route("/check-availability", methods=["POST"])
+def check_availability():
+    data = request.get_json()
+    site_id = data["site_id"]
+    check_in = datetime.strptime(data["check_in"], '%Y-%m-%d')
+    check_out = datetime.strptime(data["check_out"], '%Y-%m-%d')
+
+    conflicting_reservations = Reservation.query.filter(
+        Reservation.site_id == site_id,
+        Reservation.start_date < check_out,
+        Reservation.end_date > check_in
+    ).all()
+
+    if conflicting_reservations:
+        return jsonify({"available": False, "message": "Site is not available for the selected dates."}), 200
+    else:
+        return jsonify({"available": True}), 200

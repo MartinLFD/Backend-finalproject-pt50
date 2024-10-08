@@ -3,8 +3,10 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECI
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from extensions import db
+#importación 
 
-# TABLA ROLE
+
+#TABLA ROLE
 class Role(db.Model):
     __tablename__ = 'role'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -15,8 +17,10 @@ class Role(db.Model):
             "id": self.id,
             "name": self.name,
         }
+    
 
-# Tabla User
+#Tabla User
+
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -27,7 +31,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(15), nullable=True)
     role_id = db.Column(db.Integer, ForeignKey('role.id'), nullable=False)
-    registration_date = db.Column(DateTime, default=datetime.now)
+    registration_date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
     
     role = relationship("Role")
 
@@ -40,10 +44,11 @@ class User(db.Model):
             "email": self.email,
             "phone": self.phone,
             "role": self.role.serialize(),
-            "registration_date": self.registration_date.strftime('%Y-%m-%d %H:%M:%S') if self.registration_date else None #arreglo de hora
+            "registration_date": self.registration_date
         }
 
 # Table Camping 
+
 class Camping(db.Model):
     __tablename__ = 'camping'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -53,8 +58,8 @@ class Camping(db.Model):
     razon_social = db.Column(db.String(100), nullable=False)
     comuna = db.Column(db.String(50), nullable=False)
     region = db.Column(db.String(50), nullable=False)
-    landscape = db.Column(db.String(200), nullable=True)
-    type = db.Column(db.String(200), nullable=True)
+    landscape = db.Column(db.String(200), nullable = True)
+    type = db.Column(db.String(200), nullable = True)
     phone = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(255), nullable=False)
     url_web = db.Column(db.String(255), nullable=True)
@@ -65,7 +70,8 @@ class Camping(db.Model):
     images = db.Column(JSON, nullable=True)  
     services = db.Column(JSON, nullable=True)  
     provider = relationship("User")
-    sites = relationship("Site", back_populates="camping")
+    zones = relationship("Site", back_populates="camping")
+    
 
     def serialize(self):
         return {
@@ -87,9 +93,11 @@ class Camping(db.Model):
             "main_image": self.main_image,
             "images": self.images,
             "services": self.services if isinstance(self.services, list) else [],
-            "sites": [site.serialize() for site in self.sites],
+            "zones": [zone.serialize() for zone in self.zones],
         }
 
+
+    
 # Table Reservation
 class Reservation(db.Model):
     __tablename__ = 'reservation'
@@ -108,6 +116,7 @@ class Reservation(db.Model):
 
     def serialize(self):
         site = Site.query.get(self.site_id)
+
         # Extraer solo los nombres de los servicios seleccionados
         selected_services_names = []
         if self.selected_services:
@@ -131,7 +140,9 @@ class Reservation(db.Model):
             "camping_services_with_price": camping_services_with_price  # Servicios del camping con nombre y precio
         }
 
-# Table Review
+    
+    
+#Table Review
 class Review(db.Model):
     __tablename__ = 'review'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -151,17 +162,15 @@ class Review(db.Model):
             "camping": self.camping.serialize(),
             "comment": self.comment,
             "rating": self.rating,
-            "date": self.date.strftime('%Y-%m-%d %H:%M:%S') if self.date else None, # fechas con codigo
+            "date": self.date,
         }
-
-# Table Site 
-
-class Site(db.Model):     
+class Site(db.Model): 
     __tablename__ = 'site' 
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
     camping_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    
     status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
     max_of_people = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, default=10000)
@@ -170,7 +179,7 @@ class Site(db.Model):
     review = db.Column(db.Text, nullable=True)  
     url_map_site = db.Column(db.String(255), nullable=True)  
     url_photo_site = db.Column(db.String(255), nullable=True)  
-    camping = relationship("Camping", back_populates="sites")
+    camping = relationship("Camping", back_populates="zones")
 
     def serialize(self):
         return {

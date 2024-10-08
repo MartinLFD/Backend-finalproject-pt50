@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
@@ -5,7 +6,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
 from routes.role import role
 from routes.user import user
-from routes.camping import camping_blueprint  # Cambiado para que coincida con el nombre en 'camping.py'
+from routes.camping import camping
 from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
@@ -29,10 +30,10 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)  # Duración del to
 db.init_app(app)
 bcrypt.init_app(app)
 jwt.init_app(app)
-migrate = Migrate(app, db)
+Migrate(app, db)
 
 # Configurar CORS con soporte para credenciales
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request
@@ -48,6 +49,7 @@ def refresh_expiring_jwts(response):
     except (RuntimeError, KeyError):
         return response
 
+
 # Home
 @app.route("/", methods=["GET"])
 def home():
@@ -59,7 +61,7 @@ def home():
 # Registrar blueprints
 app.register_blueprint(role)
 app.register_blueprint(user)
-app.register_blueprint(camping_blueprint)  # Cambiado aquí también
+app.register_blueprint(camping)
 app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
