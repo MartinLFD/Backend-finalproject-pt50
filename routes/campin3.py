@@ -119,7 +119,7 @@ def update_camping_for_provider(provider_id, camping_id):
         camping.rules = data.get('rules', camping.rules)
         camping.images = data.get('images', camping.images)
         camping.services = data.get('services', camping.services)
-        camping.main_image = data.get('main_image', camping.main_image)  # <-- Aquí se agrega la main_image
+        camping.main_image = data.get('main_image', camping.main_image)
 
         db.session.commit()
         return jsonify({"message": "Camping updated successfully"}), 200
@@ -136,7 +136,7 @@ def public_view_get_campings():
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
     
-@camping_blueprint.route("/camping/<int:camping_id>", methods=["GET"])  # GET para traer información de cada camping
+@camping_blueprint.route("/camping/<int:camping_id>", methods=["GET"])
 def get_public_view_by_camping_id(camping_id):
     try: 
         camping = Camping.query.filter_by(id=camping_id).first()
@@ -157,7 +157,6 @@ def search_campings():
     check_in = data.get('check_in')
     check_out = data.get('check_out')
 
-    # Convertir fechas de entrada y salida a objetos datetime
     check_in_date = datetime.strptime(check_in, '%Y-%m-%d') if check_in else None
     check_out_date = datetime.strptime(check_out, '%Y-%m-%d') if check_out else None
 
@@ -175,9 +174,6 @@ def search_campings():
             Site.status == 'available'
         ).group_by(Camping.id).all()
 
-        # Imprimir la consulta generada para depuración
-        print(f"Consulta generada: {query}")
-
         result = []
         for camping in query:
             available_sites = [
@@ -185,7 +181,6 @@ def search_campings():
                 if site.status == 'available'
                 and site.max_of_people >= num_people
             ]
-            # Imprimir los sitios disponibles por camping
             print(f"Camping ID: {camping.id}, Sitios disponibles: {len(available_sites)}")
 
             if available_sites:
@@ -197,7 +192,6 @@ def search_campings():
                     "available_sites_count": len(available_sites),
                 })
 
-        # Imprimir el resultado antes de devolverlo
         print(f"Resultado: {result}")
 
         return jsonify(result), 200
@@ -205,4 +199,3 @@ def search_campings():
     except SQLAlchemyError as e:
         print(f"Error en la búsqueda de campings: {str(e)}")
         return jsonify({"error": "Error en la búsqueda de campings"}), 500
-
