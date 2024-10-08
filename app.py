@@ -13,6 +13,7 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, set_access
 
 app = Flask(__name__)
 
+
 # Configuraciones
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:iAZHmHoRwXmjcUSvafpcTTZWyugPdSYq@autorack.proxy.rlwy.net:15974/railway'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -33,6 +34,7 @@ migrate = Migrate(app, db)
 
 # Configurar CORS con soporte para credenciales
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
+
 
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request

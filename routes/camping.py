@@ -148,18 +148,26 @@ def get_public_view_by_camping_id(camping_id):
         print(e)
         return jsonify({"error": "Error al obtener data de camping_id"}), 500
 
+
 # Ruta de búsqueda usando JOIN para mostrar campings con sitios disponibles
 @camping_blueprint.route("/search", methods=["POST"])
 def search_campings():
     data = request.get_json()
     destination = data.get('destination')
-    num_people = data.get('num_people')
-    check_in = data.get('check_in')
-    check_out = data.get('check_out')
+    num_people = data.get('numPeople')  # Ajuste: asegurarse de que coincide con el frontend
+    check_in = data.get('checkIn')
+    check_out = data.get('checkOut')
 
     # Convertir fechas de entrada y salida a objetos datetime
     check_in_date = datetime.strptime(check_in, '%Y-%m-%d') if check_in else None
     check_out_date = datetime.strptime(check_out, '%Y-%m-%d') if check_out else None
+
+    # Verificar si num_people es un valor válido (entero)
+    try:
+        num_people = int(num_people) if num_people else None
+    except ValueError:
+        print("Error: El número de personas proporcionado no es válido")
+        return jsonify({"error": "Número de personas no válido"}), 400
 
     # Imprimir las variables para ver los datos recibidos
     print(f"Datos recibidos: {data}")
@@ -183,7 +191,7 @@ def search_campings():
             available_sites = [
                 site for site in camping.sites
                 if site.status == 'available'
-                and site.max_of_people >= num_people
+                and site.max_of_people >= (num_people if num_people else 0)
             ]
             # Imprimir los sitios disponibles por camping
             print(f"Camping ID: {camping.id}, Sitios disponibles: {len(available_sites)}")
