@@ -1,5 +1,5 @@
 from flask import Blueprint
-from models import Camping
+from models import Camping, Review
 from datetime import datetime
 from flask import request, jsonify
 from models import db
@@ -7,6 +7,7 @@ from auth_utils import view_permission_required
 from flask_jwt_extended import (
     jwt_required,
 )
+from sqlalchemy import func
 
 camping = Blueprint("camping", __name__ ,url_prefix="/camping")
 
@@ -134,7 +135,21 @@ def update_camping_for_provider(provider_id, camping_id):
 def public_view_get_campings():
     try:
         campings = Camping.query.all()  # Obtén todos los campings
-        return jsonify([camping.serialize() for camping in campings]), 200
+        camping_data_list = []
+
+        for camping in campings:
+            total_reviews = db.session.query(func.count(Review.id)).filter_by(camping_id=camping.id).scalar()
+            total_rating = db.session.query(func.sum(Review.rating)).filter_by(camping_id=camping.id).scalar() or 0
+            average_rating = round(total_rating / total_reviews, 1) if total_reviews > 0 else 0
+            
+            camping_data = camping.serialize()
+            camping_data.update({
+                "total_reviews": total_reviews,
+                "average_rating": average_rating
+            })
+            camping_data_list.append(camping_data)
+        return jsonify(camping_data_list), 200
+        
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
     
