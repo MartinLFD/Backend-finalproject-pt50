@@ -2,11 +2,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Enum, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-db = SQLAlchemy()
-#importación 
+from extensions import db
 
-
-#TABLA ROLE
+# TABLA ROLE
 class Role(db.Model):
     __tablename__ = 'role'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -17,10 +15,8 @@ class Role(db.Model):
             "id": self.id,
             "name": self.name,
         }
-    
 
-#Tabla User
-
+# Tabla User
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -31,7 +27,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(15), nullable=True)
     role_id = db.Column(db.Integer, ForeignKey('role.id'), nullable=False)
-    registration_date = db.Column(DateTime, default='CURRENT_TIMESTAMP')
+    registration_date = db.Column(DateTime, default=datetime.now)
     
     role = relationship("Role")
 
@@ -44,11 +40,10 @@ class User(db.Model):
             "email": self.email,
             "phone": self.phone,
             "role": self.role.serialize(),
-            "registration_date": self.registration_date
+            "registration_date": self.registration_date.strftime('%Y-%m-%d %H:%M:%S') if self.registration_date else None #arreglo de hora
         }
 
 # Table Camping 
-
 class Camping(db.Model):
     __tablename__ = 'camping'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -58,20 +53,19 @@ class Camping(db.Model):
     razon_social = db.Column(db.String(100), nullable=False)
     comuna = db.Column(db.String(50), nullable=False)
     region = db.Column(db.String(50), nullable=False)
-    landscape = db.Column(db.String(200), nullable = True)
-    type = db.Column(db.String(200), nullable = True)
+    landscape = db.Column(db.String(200), nullable=True)
+    type = db.Column(db.String(200), nullable=True)
     phone = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(255), nullable=False)
     url_web = db.Column(db.String(255), nullable=True)
     url_google_maps = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    rules = db.Column(JSON, nullable=True)  # Cambiado a JSON
-    main_image = db.Column(JSON, nullable=True)  # Foto principal en JSON
-    images = db.Column(JSON, nullable=True)  # Álbum de imágenes en JSON
-    services = db.Column(JSON, nullable=True)  # Servicios en JSON
+    rules = db.Column(JSON, nullable=True)  
+    main_image = db.Column(JSON, nullable=True)  
+    images = db.Column(JSON, nullable=True)  
+    services = db.Column(JSON, nullable=True)  
     provider = relationship("User")
-    zones = relationship("Site", back_populates="camping")
-    
+    sites = relationship("Site", back_populates="camping")
 
     def serialize(self):
         return {
@@ -89,15 +83,14 @@ class Camping(db.Model):
             "url_web": self.url_web,
             "url_google_maps": self.url_google_maps,
             "description": self.description,
-            "rules": self.rules,  # Cambiado a JSON
+            "rules": self.rules,
             "main_image": self.main_image,
             "images": self.images,
-            "services": self.services,
-            "zones": [zone.serialize() for zone in self.zones],
-            
+            "services": self.services if isinstance(self.services, list) else [],
+            "sites": [site.serialize() for site in self.sites],
         }
-    
-#Table Reservation
+
+# Table Reservation
 class Reservation(db.Model):
     __tablename__ = 'reservation'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -107,31 +100,43 @@ class Reservation(db.Model):
     end_date = db.Column(Date, nullable=False)
     number_of_people = db.Column(db.Integer, nullable=False)
     reservation_date = db.Column(DateTime, default=datetime.now)
-    selected_services = db.Column(JSON, nullable=True)  # Cambiado a JSON
+    selected_services = db.Column(JSON, nullable=True)  # Almacenado como lista JSON
     total_amount = db.Column(DECIMAL(10, 2), nullable=False, default=0)
 
     user = relationship("User")
     site = relationship("Site")
 
     def serialize(self):
+        site = Site.query.get(self.site_id)
+        # Extraer solo los nombres de los servicios seleccionados
+        selected_services_names = []
+        if self.selected_services:
+            selected_services_names = self.selected_services  # Simplemente una lista de los nombres
+
+        # Extraer los servicios del camping con nombre y precio (si los servicios están en formato dict)
+        camping_services_with_price = []
+        if site.camping and isinstance(site.camping.services, dict):
+            camping_services_with_price = [{"name": name, "price": price} for name, price in site.camping.services.items()]
         return {
             "id": self.id,
             "user": self.user.serialize(),
-            "site": self.site.serialize(),
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "site": site.serialize(),
+            "camping": site.camping.serialize() if site.camping else None,
+            "start_date": self.start_date.strftime('%Y-%m-%d'),
+            "end_date": self.end_date.strftime('%Y-%m-%d'),
             "number_of_people": self.number_of_people,
-            "reservation_date": self.reservation_date,
-            "selected_services": self.selected_services,  # Cambiado a JSON
+            "reservation_date": self.reservation_date.strftime('%Y-%m-%d %H:%M:%S'),
+            "selected_services": selected_services_names,  # Solo nombres de los servicios seleccionados
             "total_amount": float(self.total_amount),
+            "camping_services_with_price": camping_services_with_price  # Servicios del camping con nombre y precio
         }
-    
-#Table Review
+
+# Table Review
 class Review(db.Model):
     __tablename__ = 'review'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)
-    campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    camping_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
     comment = db.Column(db.Text, nullable=True)
     rating = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
@@ -146,29 +151,41 @@ class Review(db.Model):
             "camping": self.camping.serialize(),
             "comment": self.comment,
             "rating": self.rating,
-            "date": self.date,
+            "date": self.date.strftime('%Y-%m-%d %H:%M:%S') if self.date else None, # fechas con codigo
         }
-# Tabla Site
-class Site(db.Model):
-    _tablename_ = 'site'
+
+# Table Site 
+
+class Site(db.Model):     
+    __tablename__ = 'site' 
+    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-    campsite_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
+    camping_id = db.Column(db.Integer, ForeignKey('camping.id'), nullable=False)
     status = db.Column(Enum('available', 'unavailable', name='site_status'), default='available')
     max_of_people = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, default=10000)
-    facilities = db.Column(JSON, nullable=True) 
-    dimensions = db.Column(JSON, nullable=True)  
-    camping = relationship("Camping", back_populates="zones")
+    facilities = db.Column(JSON, nullable=True)
+    dimensions = db.Column(JSON, nullable=True)
+    review = db.Column(db.Text, nullable=True)  
+    url_map_site = db.Column(db.String(255), nullable=True)  
+    url_photo_site = db.Column(db.String(255), nullable=True)  
+    camping = relationship("Camping", back_populates="sites")
 
     def serialize(self):
         return {
             "id": self.id,
             "name": self.name,
-            "campsite_id": self.campsite_id,
+            "camping_id": self.camping_id,
             "status": self.status,
             "max_of_people": self.max_of_people,
             "price": self.price,
             "facilities": self.facilities,
             "dimensions": self.dimensions,
+            "review": self.review,
+            "url_map_site": self.url_map_site,
+            "url_photo_site": self.url_photo_site,
+            "camping_name": self.camping.name if self.camping else None,  # Nombre del camping asociado
+            "camping_services": self.camping.services if self.camping else {},  # Servicios del camping
+            "camping_provider": self.camping.provider.serialize() if self.camping else None,  # Información del proveedor
         }
