@@ -73,7 +73,8 @@ app.register_blueprint(review)
 app.register_blueprint(site)
 
 
-# Configuración de Cloudinary
+
+""" # Configuración de Cloudinary
 cloudinary.config(
     cloud_name="dnrb5m9es",
     api_key="231452648138341",
@@ -99,6 +100,6 @@ def delete_image():
     except Exception as e:
         return jsonify({"message": "Error en el servidor", "error": str(e)}), 500
 
-
+ """
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)
