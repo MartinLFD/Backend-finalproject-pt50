@@ -31,23 +31,24 @@ def create_camping():
         region=data["region"],
         phone=data["phone"],
         address=data["address"],
-        url_web=data.get("url_web"),  
-        url_google_maps=data.get("url_google_maps"),
+        url_web=data.get("url_web", ""),  # Asegurarte de que siempre se reciba una cadena
+        url_google_maps=data.get("url_google_maps", ""),
         description=data["description"],
-        rules=data.get("rules", []),  
-        main_image=data.get("main_image"),
-        images=data.get("images", []),
-        services=data.get("services", []),
+        rules=data.get("rules", []),  # Asegúrate de que siempre sea una lista
+        main_image=data.get("main_image", None),  # Puedes dar un valor por defecto o permitir que sea None
+        images=data.get("images", []),  # Asegúrate de que siempre sea una lista
+        services=data.get("services", []),  # Asegúrate de que siempre sea una lista
     )
 
     try:
         db.session.add(camping)
         db.session.commit()
         return jsonify(camping.serialize()), 201
-    except Exception as e:
+    except SQLAlchemyError as e:  # Captura específicamente errores de SQLAlchemy
         print(f"Error al crear el camping: {e}")
         db.session.rollback()
         return jsonify({"error": "Error interno al crear el camping"}), 500
+
 
 
 @camping_blueprint.route("/", methods=["GET"])
@@ -177,7 +178,7 @@ def search_campings():
     try:
         query = db.session.query(Camping).join(Site).outerjoin(Reservation).filter(
             (Camping.region == destination) | (Camping.comuna == destination) if destination else True,
-            Site.max_of_people >= num_people if num_people else True,
+            Site.max_of_people >= num_people if num_people else True,  # Asegurar que el sitio tenga capacidad suficiente
             (Reservation.end_date <= check_in_date) | (Reservation.end_date.is_(None)) if check_in_date else True,
             (Reservation.start_date >= check_out_date) | (Reservation.start_date.is_(None)) if check_out_date else True,
             Site.status == 'available'
@@ -191,7 +192,7 @@ def search_campings():
             available_sites = [
                 site for site in camping.sites
                 if site.status == 'available'
-                and site.max_of_people >= (num_people if num_people else 0)
+                and site.max_of_people >= (num_people if num_people else 0)  # Filtro de número de personas
             ]
             # Imprimir los sitios disponibles por camping
             print(f"Camping ID: {camping.id}, Sitios disponibles: {len(available_sites)}")
@@ -202,7 +203,7 @@ def search_campings():
                     "camping_name": camping.name,
                     "region": camping.region,
                     "comuna": camping.comuna,
-                    "available_sites_count": len(available_sites),
+                    "available_sites_count": len(available_sites),  # Mostrar cantidad de sitios disponibles
                 })
 
         # Imprimir el resultado antes de devolverlo
@@ -213,4 +214,3 @@ def search_campings():
     except SQLAlchemyError as e:
         print(f"Error en la búsqueda de campings: {str(e)}")
         return jsonify({"error": "Error en la búsqueda de campings"}), 500
-
