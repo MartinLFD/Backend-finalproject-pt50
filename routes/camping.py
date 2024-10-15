@@ -134,7 +134,14 @@ def update_camping_for_provider(provider_id, camping_id):
 @camping.route("/public-view-get-campings", methods=["GET"])
 def public_view_get_campings():
     try:
-        campings = Camping.query.all()  # Obtén todos los campings
+        # Obtener los parámetros 'limit' y 'offset' de la solicitud (con valores predeterminados)
+        limit = int(request.args.get('limit', 10))  # Por defecto, 10 campings por página
+        offset = int(request.args.get('offset', 0))  # Por defecto, empezar desde el primero
+        
+        # Consulta de campings paginada
+        campings = Camping.query.offset(offset).limit(limit).all()
+        total_campings = Camping.query.count()  # Número total de campings en la base de datos
+        
         camping_data_list = []
 
         for camping in campings:
@@ -148,10 +155,18 @@ def public_view_get_campings():
                 "average_rating": average_rating
             })
             camping_data_list.append(camping_data)
-        return jsonify(camping_data_list), 200
+
+        # Devolver los campings paginados junto con el total de campings
+        return jsonify({
+            "campings": camping_data_list,
+            "total": total_campings,
+            "limit": limit,
+            "offset": offset
+        }), 200
         
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
+
     
 @camping.route("/camping/<int:camping_id>", methods=["GET"]) #GET para traer información de cada camping
 def get_public_view_by_camping_id(camping_id):
