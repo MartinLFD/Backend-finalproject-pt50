@@ -1,12 +1,12 @@
-from flask import Blueprint, request, jsonify
-from models import Site, Camping, Reservation
+from flask import Flask, request, jsonify
+from models import Site
 from models import db
-from datetime import datetime
-from sqlalchemy.exc import SQLAlchemyError
+from flask import Blueprint
+
 
 site = Blueprint("site", __name__, url_prefix="/site")
+site_bp = Blueprint('site_bp', __name__)
 
-# Ruta para crear un sitio
 @site.route("/site", methods=["POST"])
 def create_site():
     data = request.get_json()
@@ -26,13 +26,11 @@ def create_site():
     db.session.commit()
     return jsonify(site.serialize()), 201
 
-# Ruta para obtener todos los sitios
 @site.route("/site", methods=["GET"])
 def get_sites(): 
     sites = Site.query.all()
     return jsonify([site.serialize() for site in sites])
 
-# Ruta para actualizar un sitio específico
 @site.route("/site/<int:id>", methods=["PUT"])
 def update_site(id):
     data = request.get_json()
@@ -51,7 +49,6 @@ def update_site(id):
     db.session.commit()
     return jsonify(site.serialize()), 200
 
-# Ruta para eliminar un sitio específico
 @site.route("/site/<int:id>", methods=["DELETE"])
 def delete_site(id):
     site = Site.query.get(id)
@@ -61,7 +58,14 @@ def delete_site(id):
     db.session.commit()
     return jsonify({"message": "Site deleted"}), 200
 
-# Ruta para obtener un sitio específico por ID
+
+@site.route("/<int:camping_id>", methods=["GET"])
+def get_reviews_by_camping(camping_id):
+    sites = Site.query.filter_by(camping_id=camping_id).all()
+    if not site:
+        return jsonify({"error": "No site found for this camping"}), 404
+    return jsonify([site.serialize() for site in sites]), 200
+
 @site.route("/site/<int:id>", methods=["GET"])
 def get_site_by_id(id):
     site = Site.query.get(id)
@@ -69,15 +73,18 @@ def get_site_by_id(id):
         return jsonify({"error": "Site not found"}), 404
     return jsonify(site.serialize()), 200
 
-# Ruta para obtener sitios de un camping específico
+
+# Ruta para obtener sitios con join
 @site.route('/camping/<int:camping_id>/sites', methods=['GET'])
 def get_sites_by_camping(camping_id):
     try:
-        sites = Site.query.filter_by(camping_id=camping_id, status='available').all()
-        return jsonify([site.serialize() for site in sites]), 200
+        # Aquí se realiza el join con la tabla de reservas
+        sites_with_reservations = get_sites_with_reservations(camping_id)
+        return jsonify(sites_with_reservations), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
+    
 # Ruta para actualizar el estado de un sitio
 @site.route("/update-site/<int:id>/changue-status", methods=["PUT"])
 def update_site_status(id):

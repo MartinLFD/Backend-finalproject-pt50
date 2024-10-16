@@ -7,7 +7,9 @@ from extensions import bcrypt
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth_utils import view_permission_required
 
+
 reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
+reservation_bp = Blueprint('reservation_bp', __name__)
 
 @reservation.route("/reservation", methods=["POST"])
 @jwt_required()
@@ -55,6 +57,7 @@ def create_reservation():
     db.session.commit()
 
     return jsonify(reservation.serialize()), 201
+
 
 @reservation.route("/reservation", methods=["GET"])
 @jwt_required()
@@ -104,79 +107,42 @@ def delete_reservation(id):
     
     return jsonify({"message": "Reservation deleted"}), 200
 
+
 @reservation.route("/view-reservations-customer/<int:user_id>/all-details", methods=["GET"])
 @jwt_required()
-@view_permission_required([3])  # Solo permite a clientes acceder a sus reservas
+@view_permission_required([3]) # Solo permite a clientes acceder a sus reservas
 def get_reservations_and_details_by_user(user_id):
     current_user_id = get_jwt_identity()
     if current_user_id != user_id:
         return jsonify({"error": "No autorizado"}), 403
 
     try:
-        # Obtener todas las reservas del usuario autenticado con detalles relacionados
+ # Obtener todas las reservas del usuario autenticado con detalles relacionados
         reservations = Reservation.query.filter_by(user_id=user_id).all()
         
         if not reservations:
             return jsonify({"error": "No se encontraron reservas para este usuario"}), 404
 
-        # Serializar las reservas y sus detalles utilizando el método serialize
+ # Serializar las reservas y sus detalles utilizando el método serialize
         serialized_reservations = [reservation.serialize() for reservation in reservations]
 
         return jsonify(serialized_reservations), 200
     
     except Exception as e:
-        # Imprimir error ????
+# Imprimir error ????
         print(f"Error en get_reservations_and_details_by_user: {str(e)}")
         return jsonify({"error": "Error interno del servidor", "message": str(e)}), 500
 
+
 @reservation.route("/reservation-in-camping/<int:provider_id>/reservations", methods=["GET"])
 @jwt_required()
-@view_permission_required([2])  # Solo permite a proveedores acceder a sus reservas
+@view_permission_required([2])
 def get_reservations_by_provider(provider_id):
     try:
-        # Obtener todos los campings que pertenecen al proveedor
-        campings = Camping.query.filter_by(provider_id=provider_id).all()
-        if not campings:
-            return jsonify({"error": "No se encontraron campings para este proveedor"}), 404
-
-        # Obtener los IDs de los campings
-        camping_ids = [camping.id for camping in campings]
-
-        # Obtener todas las reservas asociadas a los campings del proveedor usando 'in_'
-        reservations = (
-            Reservation.query
-            .join(Site)
-            .filter(Site.camping_id.in_(camping_ids))
-            .all()
-        )
-
-        if not reservations:
-            return jsonify({"error": "No se encontraron reservas para este proveedor"}), 404
-
-        # Serializar las reservas
-        serialized_reservations = [reservation.serialize() for reservation in reservations]
-        return jsonify(serialized_reservations), 200
+        # Llamar a la función del join en join.py
+        reservations = get_reservations_with_camping_join(provider_id)
+        return jsonify(reservations), 200
 
     except Exception as e:
         print(f"Error en get_reservations_by_provider: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
-    
-##____________________________________________________MOTOR DE BUSQUEDA________________________________
-# Ruta para verificar disponibilidad de un sitio específico
-@reservation.route("/check-availability", methods=["POST"])
-def check_availability():
-    data = request.get_json()
-    site_id = data["site_id"]
-    check_in = datetime.strptime(data["check_in"], '%Y-%m-%d')
-    check_out = datetime.strptime(data["check_out"], '%Y-%m-%d')
-
-    conflicting_reservations = Reservation.query.filter(
-        Reservation.site_id == site_id,
-        Reservation.start_date < check_out,
-        Reservation.end_date > check_in
-    ).all()
-
-    if conflicting_reservations:
-        return jsonify({"available": False, "message": "Site is not available for the selected dates."}), 200
-    else:
-        return jsonify({"available": True}), 200
