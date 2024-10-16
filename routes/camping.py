@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify
-from models import Camping, Site, Reservation
+from flask import Blueprint
+from models import Camping
 from datetime import datetime
 from models import db
 from auth_utils import view_permission_required
-from flask_jwt_extended import jwt_required
-from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import (
+    jwt_required,
+)
 
 # Cambiar el nombre del blueprint para evitar conflicto
 camping_blueprint = Blueprint("camping_blueprint", __name__, url_prefix="/camping")
@@ -132,10 +133,39 @@ def update_camping_for_provider(provider_id, camping_id):
 @camping_blueprint.route("/public-view-get-campings", methods=["GET"])
 def public_view_get_campings():
     try:
-        campings = Camping.query.all()  # Obtén todos los campings
-        return jsonify([camping.serialize() for camping in campings]), 200
+        # Obtener los parámetros 'limit' y 'offset' de la solicitud (con valores predeterminados)
+        limit = int(request.args.get('limit', 10))  # Por defecto, 10 campings por página
+        offset = int(request.args.get('offset', 0))  # Por defecto, empezar desde el primero
+        
+        # Consulta de campings paginada
+        campings = Camping.query.offset(offset).limit(limit).all()
+        total_campings = Camping.query.count()  # Número total de campings en la base de datos
+        
+        camping_data_list = []
+
+        for camping in campings:
+            total_reviews = db.session.query(func.count(Review.id)).filter_by(camping_id=camping.id).scalar()
+            total_rating = db.session.query(func.sum(Review.rating)).filter_by(camping_id=camping.id).scalar() or 0
+            average_rating = round(total_rating / total_reviews, 1) if total_reviews > 0 else 0
+            
+            camping_data = camping.serialize()
+            camping_data.update({
+                "total_reviews": total_reviews,
+                "average_rating": average_rating
+            })
+            camping_data_list.append(camping_data)
+
+        # Devolver los campings paginados junto con el total de campings
+        return jsonify({
+            "campings": camping_data_list,
+            "total": total_campings,
+            "limit": limit,
+            "offset": offset
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
+
     
 @camping_blueprint.route("/camping/<int:camping_id>", methods=["GET"])  # GET para traer información de cada camping
 def get_public_view_by_camping_id(camping_id):
