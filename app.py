@@ -11,6 +11,11 @@ from routes.review import review
 from routes.site import site
 from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
 
+from flask  import request, jsonify
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 app = Flask(__name__)
 
@@ -68,6 +73,31 @@ app.register_blueprint(review)
 app.register_blueprint(site)
 
 
+# Configuración de Cloudinary
+cloudinary.config(
+    cloud_name="dnrb5m9es",
+    api_key="231452648138341",
+    api_secret="iTeTmDU0gkHFpHkYp6zGnjf6JUA",
+    secure=True,
+)
+
+# Ruta para eliminar una imagen
+@app.route('/delete-image', methods=['DELETE'])
+def delete_image():
+    data = request.get_json()
+    public_id = data.get('public_id')
+
+    if not public_id:
+        return jsonify({"message": "public_id es requerido"}), 400
+
+    try:
+        result = cloudinary.uploader.destroy(public_id)
+        if result.get('result') == 'ok':
+            return jsonify({"message": "Imagen eliminada exitosamente"}), 200
+        else:
+            return jsonify({"message": "Error al eliminar la imagen"}), 400
+    except Exception as e:
+        return jsonify({"message": "Error en el servidor", "error": str(e)}), 500
 
 
 if __name__ == "__main__":
