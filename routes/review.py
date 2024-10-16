@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import request, jsonify
 from models import db
 from sqlalchemy import func
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 review = Blueprint("review", __name__ ,url_prefix="/review")
 
@@ -41,14 +41,6 @@ def update_review(id):
     db.session.commit()
     return jsonify(review.serialize()), 200
 
-@review.route("/review/<int:id>", methods=["DELETE"])
-def delete_review(id):
-    review = Review.query.get(id)
-    if not review:
-        return jsonify({"error": "Review not found"}), 404
-    db.session.delete(review)
-    db.session.commit()
-    return jsonify({"message": "Review deleted"}), 200
 
 @review.route("/get-camping-rating/<int:camping_id>/from-reviews", methods=["GET"])
 def get_reviews_by_camping(camping_id):
@@ -73,3 +65,18 @@ def get_reviews_by_camping(camping_id):
     }), 200
 
 
+@review.route("/review/<int:id>", methods=["DELETE"])
+@jwt_required() 
+def delete_review(id):
+    current_user_id = get_jwt_identity()  
+
+    review = Review.query.get(id)
+    if not review:
+        return jsonify({"error": "Review not found"}), 404
+
+    if review.user_id != current_user_id:
+        return jsonify({"error": "No tienes permiso para eliminar este comentario"}), 403
+
+    db.session.delete(review)
+    db.session.commit()
+    return jsonify({"message": "Review deleted"}), 200
