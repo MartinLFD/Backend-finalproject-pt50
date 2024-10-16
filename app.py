@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask
+from flask import Flask, request
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -35,6 +35,16 @@ Migrate(app, db)
 # Configurar CORS con soporte para credenciales
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
+
+@app.before_request
+def handle_options_requests():
+    if request.method == 'OPTIONS':
+        response = app.make_response('')
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request
 def refresh_expiring_jwts(response):

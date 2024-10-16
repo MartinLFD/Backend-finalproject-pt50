@@ -43,26 +43,38 @@ def get_user():
 @user.route("/create-one-user", methods=["POST"])
 def create_user():
     data = request.get_json()
+    
+    # Verificar campos requeridos
     if not all([data.get("first_name"), data.get("last_name"), data.get("rut"), data.get("email"), data.get("password")]):
         return jsonify({"error": "Missing required fields"}), 400
 
+    # Verificar si el email ya está en uso
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "Email already in use"}), 400
-    
+
+    # Verificar si el RUT ya está en uso
+    if User.query.filter_by(rut=data["rut"]).first():
+        return jsonify({"error": "RUT already in use"}), 400
+
+    # Hashear la contraseña y crear el usuario
     hashed_password = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
     user = User(
         first_name=data["first_name"],
         last_name=data["last_name"],
         rut=data["rut"],
         email=data["email"],
-        password=hashed_password,  
+        password=hashed_password,
         phone=data.get("phone"),
         role_id=data["role_id"],
         registration_date=datetime.now()
     )
+
+    # Guardar el usuario en la base de datos
     db.session.add(user)
     db.session.commit()
+
     return jsonify(user.serialize()), 201
+
 
 @user.route("/login-user", methods=["POST"])
 def login():
