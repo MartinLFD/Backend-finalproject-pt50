@@ -5,14 +5,14 @@ from flask import request, jsonify
 from models import db
 from auth_utils import view_permission_required
 from flask_jwt_extended import (
-    jwt_required,
+    jwt_required, get_jwt_identity
 )
 
 from routes.join import search_campings
 from sqlalchemy import func
 
 
-camping = Blueprint("camping", __name__ ,url_prefix="/camping")
+camping = Blueprint("camping", __name__, url_prefix="/camping")
 
 @camping.route("/create-camping-by-admin", methods=["POST"])
 def create_camping():
@@ -21,7 +21,7 @@ def create_camping():
 
     # Validar que se reciban los datos obligatorios
     required_fields = ["provider_id", "name", "camping_rut", "razon_social", 
-                       "comuna", "region", "phone", "address", "description"]
+                        "comuna", "region", "phone", "address", "description"]
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({"error": f"El campo {field} es obligatorio."}), 400
@@ -61,15 +61,6 @@ def get_campings():
     return jsonify([camping.serialize() for camping in campings])
 
 
-@camping.route("/<int:id>", methods=["DELETE"])
-def delete_camping(id):
-    camping = Camping.query.get(id)
-    if not camping:
-        return jsonify({"error": "Camping not found"}), 404
-    db.session.delete(camping)
-    db.session.commit()
-    return jsonify({"message": "Camping deleted"}), 200
-
 
 @camping.route("/provider/<int:provider_id>/campings", methods=["GET"])
 @jwt_required()
@@ -90,7 +81,7 @@ def get_camping_before_to_edit(provider_id, camping_id):
         if not camping:
             print("Camping not found!")
             return jsonify({"error": "Camping not found"}), 404
-        
+         
         # Aquí agregamos el console log para verificar el valor de los servicios
         print(f"Camping services: {camping.services}")
         
@@ -125,7 +116,7 @@ def update_camping_for_provider(provider_id, camping_id):
         camping.rules = data.get('rules', camping.rules)
         camping.images = data.get('images', camping.images)
         camping.services = data.get('services', camping.services)
-        camping.main_image = data.get('main_image', camping.main_image)  # <-- Aquí se agrega la main_image
+        camping.main_image = data.get('main_image', camping.main_image)  # <-- Aquí se maneja main_image como string
 
         db.session.commit()
         return jsonify({"message": "Camping updated successfully"}), 200
@@ -140,7 +131,7 @@ def public_view_get_campings():
         # Obtener los parámetros 'limit' y 'offset' de la solicitud (con valores predeterminados)
         limit = int(request.args.get('limit', 10))  # Por defecto, 10 campings por página
         offset = int(request.args.get('offset', 0))  # Por defecto, empezar desde el primero
-        
+         
         # Consulta de campings paginada
         campings = Camping.query.offset(offset).limit(limit).all()
         total_campings = Camping.query.count()  # Número total de campings en la base de datos
@@ -151,7 +142,7 @@ def public_view_get_campings():
             total_reviews = db.session.query(func.count(Review.id)).filter_by(camping_id=camping.id).scalar()
             total_rating = db.session.query(func.sum(Review.rating)).filter_by(camping_id=camping.id).scalar() or 0
             average_rating = round(total_rating / total_reviews, 1) if total_reviews > 0 else 0
-            
+             
             camping_data = camping.serialize()
             camping_data.update({
                 "total_reviews": total_reviews,
@@ -169,6 +160,7 @@ def public_view_get_campings():
         
     except Exception as e:
         return jsonify({"error": "Error al obtener los campings públicos"}), 500
+
 
     
 @camping.route("/camping/<int:camping_id>", methods=["GET"]) #GET para traer información de cada camping
