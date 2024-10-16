@@ -1,5 +1,6 @@
 # app.py
 from flask import Flask
+from flask import Flask, request
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -77,7 +78,7 @@ app.register_blueprint(camping)
 app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
-app.register_blueprint(join_bp, url_prefix='/search')
+app.register_blueprint(join_bp)
 
 
 if __name__ == "__main__":

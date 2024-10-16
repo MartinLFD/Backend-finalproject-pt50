@@ -9,7 +9,6 @@ from sqlalchemy.orm import joinedload
 # Definir el Blueprint
 join_bp = Blueprint('join_bp', __name__)
 
-
 # Ruta para búsqueda de campings y reservas, usando un solo endpoint POST
 @join_bp.route('/search', methods=['POST'])
 def search_campings():
