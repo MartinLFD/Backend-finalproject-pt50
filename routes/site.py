@@ -3,7 +3,9 @@ from models import Site
 from models import db
 from flask import Blueprint
 
+
 site = Blueprint("site", __name__, url_prefix="/site")
+#site_bp = Blueprint('site_bp', __name__)
 
 @site.route("/site", methods=["POST"])
 def create_site():
@@ -72,13 +74,22 @@ def get_site_by_id(id):
     return jsonify(site.serialize()), 200
 
 
+# Ruta para obtener sitios con join
 @site.route('/camping/<int:camping_id>/sites', methods=['GET'])
 def get_sites_by_camping(camping_id):
     try:
+        # funcion que viene del develop
         sites = Site.query.filter_by(camping_id=camping_id).all()
         return jsonify([site.serialize() for site in sites]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+            # Aquí se realiza el join con la tabla de reservas
+        #sites_with_reservations = get_sites_with_reservations(camping_id)
+        #return jsonify(sites_with_reservations), 200
+    #except Exception as e:
+        #return jsonify({"error": str(e)}), 500
+
     
     
 # Ruta para actualizar el estado de un sitio

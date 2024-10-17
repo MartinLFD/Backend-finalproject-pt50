@@ -1,4 +1,5 @@
 # app.py
+from flask import Flask
 from flask import Flask, request
 from extensions import db, bcrypt, jwt
 from flask_migrate import Migrate
@@ -11,6 +12,8 @@ from routes.reservation import reservation
 from routes.review import review
 from routes.site import site
 from flask_jwt_extended import create_access_token, get_jwt_identity, set_access_cookies, get_jwt
+from routes.join import join_bp
+
 
 app = Flask(__name__)
 
@@ -45,6 +48,7 @@ def handle_options_requests():
         response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
+    
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request
 def refresh_expiring_jwts(response):
@@ -75,6 +79,8 @@ app.register_blueprint(camping)
 app.register_blueprint(reservation)
 app.register_blueprint(review)
 app.register_blueprint(site)
+app.register_blueprint(join_bp)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)
