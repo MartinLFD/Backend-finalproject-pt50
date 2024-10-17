@@ -174,3 +174,45 @@ def get_public_view_by_camping_id(camping_id):
     except Exception as e:
         print(e)
         return jsonify({"error": "Error al obtener data de camping_id"}), 500
+      
+
+
+@camping.route('/delete-camping/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_camping(id):
+    try:
+        # Obtener el ID del usuario logueado
+        current_user_id = get_jwt_identity()
+
+        # Buscar el camping por ID
+        camping = Camping.query.get(id)
+
+        # Verificar si existe el camping
+        if not camping:
+            return jsonify({"error": "Camping not found"}), 404
+
+        # Verificar si el usuario es el propietario (provider) del camping
+        if camping.provider_id != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Eliminar el camping si el usuario es el propietario
+        db.session.delete(camping)
+        db.session.commit()
+
+        return jsonify({"message": "Camping deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@camping.route("/buscar", methods=["POST"])
+def buscar_campings():
+    data = request.get_json()
+    region = data.get("region", "").strip()
+    comuna = data.get("comuna", "").strip()
+
+    # Aquí puedes implementar tu lógica para buscar campings
+    # Ejemplo: filtrar por región y comuna
+    campings = Camping.query.filter(Camping.region == region, Camping.comuna == comuna).all()
+
+    return jsonify([camping.serialize() for camping in campings]), 200

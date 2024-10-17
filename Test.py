@@ -24,6 +24,15 @@ def search_campings():
         checkin_date = data.get('check_in')
         checkout_date = data.get('check_out')
 
+        # Validar num_people
+        if not num_people:
+            return jsonify({"error": "El campo 'num_people' es obligatorio"}), 400
+
+        try:
+            num_people = int(num_people)
+        except (ValueError, TypeError):
+            return jsonify({"error": "El campo 'num_people' debe ser un número válido"}), 400
+
         # Convertir las fechas de checkin y checkout a formato datetime
         checkin = datetime.strptime(checkin_date, '%Y-%m-%d') if checkin_date else None
         checkout = datetime.strptime(checkout_date, '%Y-%m-%d') if checkout_date else None
@@ -60,14 +69,9 @@ def search_campings():
                     "camping_name": camping.name,
                     "region": camping.region,
                     "comuna": camping.comuna,
-                    "main_image": camping.main_image,  # Asegúrate de que esto exista en el modelo
-                    "description": camping.description,  # Asegúrate de que esto exista en el modelo
-                    "reviews_count": len(camping.reviews) if hasattr(camping, 'reviews') else 0,  # Asumiendo que tengas una relación con la tabla de reviews
-                    "rating": camping.rating if hasattr(camping, 'rating') else None,  # Asumiendo que tengas una columna de rating
-                    "available_zones_count": len(available_zones),
+                    "available_zones_count": len(available_zones),  # Mostrar cantidad de zonas disponibles
                 })
 
-            
         # Imprimir el resultado antes de devolverlo
         print(f"Resultado: {result}")
 
@@ -76,7 +80,6 @@ def search_campings():
     except SQLAlchemyError as e:
         print(f"Error en la búsqueda de campings: {str(e)}")
         response = jsonify({"error": "Error en la búsqueda de campings"})
-    
         # Añadir encabezados CORS manualmente
         response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
         response.headers.add("Access-Control-Allow-Credentials", "true")

@@ -71,8 +71,6 @@ class Camping(db.Model):
     services = db.Column(JSON, nullable=True)  
     provider = relationship("User")
     zones = relationship("Site", back_populates="camping")
-    sites = relationship("Site", back_populates="camping")
-
     
 
     def serialize(self):
@@ -96,7 +94,6 @@ class Camping(db.Model):
             "images": self.images,
             "services": self.services if isinstance(self.services, list) else [],
             "zones": [zone.serialize() for zone in self.zones],
-            "site": [Site.serialize() for site in self.site],
         }
 
 

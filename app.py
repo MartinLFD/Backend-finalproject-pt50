@@ -48,6 +48,7 @@ def handle_options_requests():
         response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
+    
 # Middleware para renovar el token JWT automáticamente si está a punto de expirar
 @app.after_request
 def refresh_expiring_jwts(response):
