@@ -8,7 +8,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth_utils import view_permission_required
 
 
-
 reservation = Blueprint("reservation", __name__, url_prefix="/reservation")
 
 @reservation.route("/reservation", methods=["POST"])

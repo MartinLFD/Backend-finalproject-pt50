@@ -7,7 +7,10 @@ from auth_utils import view_permission_required
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity
 )
+
+from routes.join import search_campings
 from sqlalchemy import func
+
 
 camping = Blueprint("camping", __name__, url_prefix="/camping")
 
@@ -171,7 +174,7 @@ def get_public_view_by_camping_id(camping_id):
     except Exception as e:
         print(e)
         return jsonify({"error": "Error al obtener data de camping_id"}), 500
-    
+      
 
 
 @camping.route('/delete-camping/<int:id>', methods=['DELETE'])
